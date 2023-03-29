@@ -425,6 +425,7 @@ class FedExServer(Server):
                         'Server: Starting evaluation at round {:d}.'.format(
                             self.state))
                     self.eval()
+                    # self.save_client_eval_results()
 
                 if self.state < self.total_round_num:
                     # Move to next round of training
@@ -442,6 +443,7 @@ class FedExServer(Server):
                     logger.info('Server: Training is finished! Starting '
                                 'evaluation.')
                     self.eval()
+                    # self.save_client_eval_results()
 
             else:  # in the evaluation process
                 # Get all the message & aggregate

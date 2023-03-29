@@ -1,3 +1,8 @@
+from federatedscope.autotune.fedex.client import FedExClient
+import logging
+
+logger = logging.getLogger(__name__)
+
 import logging
 import json
 import copy
@@ -5,39 +10,20 @@ import copy
 from federatedscope.core.message import Message
 from federatedscope.core.workers import Client
 
-logger = logging.getLogger(__name__)
 
-
-class FedExClient(Client):
-    """Some code snippets are borrowed from the open-sourced FedEx (
-    https://github.com/mkhodak/FedEx)
-    """
-    def _apply_hyperparams(self, hyperparams):
-        """Apply the given hyperparameters
-        Arguments:
-            hyperparams (dict): keys are hyperparameter names \
-                and values are specific choices.
-        """
-
-        cmd_args = []
-        for k, v in hyperparams.items():
-            cmd_args.append(k)
-            cmd_args.append(v)
-
-        self._cfg.defrost()
-        self._cfg.merge_from_list(cmd_args, check_cfg=False)
-        self._cfg.freeze(inform=False, check_cfg=False)
-        self.trainer.cfg = self._cfg
-
+class AlphaFedExClient(FedExClient):
     def callback_funcs_for_model_para(self, message: Message):
         round, sender, content = message.state, message.sender, message.content
-        model_params, arms, hyperparams = content["model_param"], content[
-            "arms"], content["hyperparam"]
+        # model_id = content.model_id
+        model_params, arms, hyperparams, model_id = content[
+            "model_param"], content["arms"], content["hyperparam"], content[
+                "model_id"]
         attempt = {
             'Role': 'Client #{:d}'.format(self.ID),
-            'Round': self.state + 1,
+            'Round': round,
             'Arms': arms,
-            'Hyperparams': hyperparams
+            'Hyperparams': hyperparams,
+            'Model_id': model_id
         }
         logger.info(json.dumps(attempt))
 
@@ -54,12 +40,13 @@ class FedExClient(Client):
         logger.info(
             self._monitor.format_eval_res(results,
                                           rnd=self.state,
-                                          role='Client #{}'.format(self.ID),
+                                          role='Client #{} Model #{}'.format(
+                                              self.ID, model_id),
                                           return_raw=True))
 
         results['arms'] = arms
         results['client_id'] = self.ID - 1
-        content = (sample_size, model_para_all, results)
+        content = (sample_size, model_para_all, results, model_id)
         self.comm_manager.send(
             Message(msg_type='model_para',
                     sender=self.ID,
@@ -70,33 +57,32 @@ class FedExClient(Client):
     def callback_funcs_for_evaluate(self, message: Message):
         sender = message.sender
         self.state = message.state
+        model_id = -1
         if message.content is not None:
-            model_params = message.content["model_param"]
+            model_params, model_id = message.content[
+                "model_param"], message.content["model_id"]
             self.trainer.update(model_params)
         if self._cfg.finetune.before_eval:
             self.trainer.finetune()
         metrics = {}
         for split in self._cfg.eval.split:
             eval_metrics = self.trainer.evaluate(target_data_split_name=split)
-            logger.info(
-                self._monitor.format_eval_res(eval_metrics,
-                                              rnd=self.state,
-                                              role='Client #{}'.format(
-                                                  self.ID),
-                                              return_raw=True))
+
             for key in eval_metrics:
 
-                # logger.info('Client #{:d}: (Evaluation ({:s} set) at '
-                #             'Round #{:d}) {:s} is {:.6f}'.format(
-                #     self.ID, split, self.state, key,
-                #     eval_metrics[key]))
-
                 if self._cfg.federate.mode == 'distributed':
-                    logger.info('Client #{:d}: (Evaluation ({:s} set) at '
-                                'Round #{:d}) {:s} is {:.6f}'.format(
-                                    self.ID, split, self.state, key,
-                                    eval_metrics[key]))
+                    logger.info(
+                        'Client #{:d}: (Evaluation ({:s} set) at '
+                        'Round #{:d}) {:s} on Model #{:d} is {:.6f}'.format(
+                            self.ID, split, self.state, key, model_id,
+                            eval_metrics[key]))
                 metrics.update(**eval_metrics)
+        logger.info(
+            self._monitor.format_eval_res(metrics,
+                                          rnd=self.state,
+                                          role='Client #{} Model #{}'.format(
+                                              self.ID, model_id),
+                                          return_raw=True))
         self.comm_manager.send(
             Message(msg_type='metrics',
                     sender=self.ID,

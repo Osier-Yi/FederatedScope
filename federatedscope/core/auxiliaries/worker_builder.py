@@ -46,6 +46,12 @@ def get_client_cls(cfg):
         if worker_class is not None:
             return worker_class['client']
 
+    if cfg.marketplace.alpha_tune_use:
+        if cfg.marketplace.alpha_tune.hpo.lower() == 'fedex':
+            from federatedscope.marketplace.alpha_tunning_FedEx import \
+                AlphaFedExClient
+            return AlphaFedExClient
+
     if cfg.hpo.fedex.use:
         from federatedscope.autotune.fedex import FedExClient
         return FedExClient
@@ -140,6 +146,12 @@ def get_server_cls(cfg):
         worker_class = func(cfg.federate.method.lower())
         if worker_class is not None:
             return worker_class['server']
+
+    if cfg.marketplace.alpha_tune_use:
+        if cfg.marketplace.alpha_tune.hpo.lower() == 'fedex':
+            from federatedscope.marketplace.alpha_tunning_FedEx import \
+                AlphaFedExServer
+            return AlphaFedExServer
 
     if cfg.hpo.fedex.use:
         from federatedscope.autotune.fedex import FedExServer

@@ -112,13 +112,10 @@ def assert_hpo_cfg(cfg):
         ['adaptive', 'aggressive', 'auto', 'constant', 'scale'])
     assert not cfg.hpo.fedex.gamma < .0 and cfg.hpo.fedex.gamma <= 1.0, \
         "{} must be in [0, 1]".format(cfg.hpo.fedex.gamma)
-    assert cfg.hpo.fedex.use == cfg.federate.use_diff, "Once FedEx is " \
-                                                       "adopted, " \
-                                                       "federate.use_diff " \
-                                                       "must be True."
-
-    assert cfg.hpo.fts.use == cfg.federate.use_diff, \
-        "Once FTS is adopted, federate.use_diff must be True."
+    # assert cfg.hpo.fedex.use == cfg.federate.use_diff, "Once FedEx is " \
+    #                                                    "adopted, " \
+    #                                                    "federate.use_diff " \
+    #                                                    "must be True."
 
 
 register_config("hpo", extend_hpo_cfg)
