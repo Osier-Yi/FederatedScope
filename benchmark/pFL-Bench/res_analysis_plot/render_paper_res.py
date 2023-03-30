@@ -38,7 +38,7 @@ filters_each_line_main_table = OrderedDict(
                 },
             ]
         }),
-        # ("cifar10-alpha05",
+        # ("cifar10_ss-alpha05",
         #  {"$and":
         #      [
         #          {"config.data.type": "CIFAR10@torchvision"},
@@ -65,7 +65,7 @@ filters_each_line_main_table = OrderedDict(
 filters_each_line_all_cifar10 = OrderedDict(
     # {dataset_name: filter}
     [
-        ("cifar10-alpha5", {
+        ("cifar10_ss-alpha5", {
             "$and": [
                 {
                     "config.data.type": "CIFAR10@torchvision"
@@ -77,7 +77,7 @@ filters_each_line_all_cifar10 = OrderedDict(
                 },
             ]
         }),
-        ("cifar10-alpha05", {
+        ("cifar10_ss-alpha05", {
             "$and": [
                 {
                     "config.data.type": "CIFAR10@torchvision"
@@ -89,7 +89,7 @@ filters_each_line_all_cifar10 = OrderedDict(
                 },
             ]
         }),
-        ("cifar10-alpha01", {
+        ("cifar10_ss-alpha01", {
             "$and": [
                 {
                     "config.data.type": "CIFAR10@torchvision"
@@ -249,8 +249,8 @@ sorted_keys = OrderedDict(sorted_method_name_pair)
 expected_keys = set(list(sorted_keys.keys()))
 expected_method_names = list(sorted_keys.values())
 expected_datasets_name = [
-    "cola", "sst2", "pubmed", "cora", "citeseer", "cifar10-alpha5",
-    "cifar10-alpha05", "cifar10-alpha01", "FEMNIST-s02", "FEMNIST-s01",
+    "cola", "sst2", "pubmed", "cora", "citeseer", "cifar10_ss-alpha5",
+    "cifar10_ss-alpha05", "cifar10_ss-alpha01", "FEMNIST-s02", "FEMNIST-s01",
     "FEMNIST-s005"
 ]
 expected_seed_set = ["1", "2", "3"]
@@ -658,10 +658,10 @@ def load_data_to_pd(use_repeat_res=False):
         alpha = "-"
         if "FEMNIST-s0" in res[1]:
             s = float(res[1].replace("FEMNIST-s0", "0."))
-        if "cifar10-alpha0" in res[1]:
-            alpha = float(res[1].replace("cifar10-alpha0", "0."))
-        elif "cifar10-alpha" in res[1]:
-            alpha = float(res[1].replace("cifar10-alpha", ""))
+        if "cifar10_ss-alpha0" in res[1]:
+            alpha = float(res[1].replace("cifar10_ss-alpha0", "0."))
+        elif "cifar10_ss-alpha" in res[1]:
+            alpha = float(res[1].replace("cifar10_ss-alpha", ""))
         res.append(s)
         res.append(alpha)
         total_com_bytes = unit_size_to_bytes(res[-5]) + unit_size_to_bytes(

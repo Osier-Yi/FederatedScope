@@ -39,7 +39,7 @@ filters_each_line_main_table = OrderedDict(
                 },
             ]
         }),
-        # ("cifar10-alpha05",
+        # ("cifar10_ss-alpha05",
         #  {"$and":
         #      [
         #          {"config.data.type": "CIFAR10@torchvision"},
@@ -66,7 +66,7 @@ filters_each_line_main_table = OrderedDict(
 filters_each_line_all_cifar10 = OrderedDict(
     # {dataset_name: filter}
     [
-        ("cifar10-alpha5", {
+        ("cifar10_ss-alpha5", {
             "$and": [
                 {
                     "config.data.type": "CIFAR10@torchvision"
@@ -78,7 +78,7 @@ filters_each_line_all_cifar10 = OrderedDict(
                 },
             ]
         }),
-        ("cifar10-alpha05", {
+        ("cifar10_ss-alpha05", {
             "$and": [
                 {
                     "config.data.type": "CIFAR10@torchvision"
@@ -90,7 +90,7 @@ filters_each_line_all_cifar10 = OrderedDict(
                 },
             ]
         }),
-        ("cifar10-alpha01", {
+        ("cifar10_ss-alpha01", {
             "$and": [
                 {
                     "config.data.type": "CIFAR10@torchvision"
@@ -295,9 +295,9 @@ expected_datasets_name = [
     "pubmed",
     "cora",
     "citeseer",
-    "cifar10-alpha5",
-    "cifar10-alpha05",
-    "cifar10-alpha01",
+    "cifar10_ss-alpha5",
+    "cifar10_ss-alpha05",
+    "cifar10_ss-alpha01",
     "FEMNIST-s02",
     "FEMNIST-s01",
     "FEMNIST-s005",

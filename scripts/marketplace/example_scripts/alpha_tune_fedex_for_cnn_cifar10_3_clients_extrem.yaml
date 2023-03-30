@@ -59,6 +59,6 @@ hpo:
     diff: False
     eta0: -1.0
     gamma: 0.0
-    ss: 'scripts/marketplace/example_scripts/cifar10/avg/fedex_grid_search_space.yaml'
+    ss: 'scripts/marketplace/example_scripts/cifar10_ss/avg/fedex_grid_search_space.yaml'
   metric: 'client_summarized_weighted_avg.val_avg_loss'
   working_folder: fedex_cifar10_avg_alpha_3_clients_extreme

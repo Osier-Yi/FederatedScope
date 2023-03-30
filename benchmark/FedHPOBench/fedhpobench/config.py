@@ -222,7 +222,7 @@ def get_cs(dname, model, mode, alg='avg'):
                         CS.UniformFloatHyperparameter('momentumsserver',
                                                       lower=0.0,
                                                       upper=1.0))
-    elif dname in ['femnist', 'cifar10']:
+    elif dname in ['femnist', 'cifar10_ss']:
         # CNN tabular and surrogate
         fidelity_space.add_hyperparameter(
             CS.CategoricalHyperparameter('round',
