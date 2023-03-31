@@ -12,8 +12,8 @@ model:
   max_tree_depth: 3
 data:
   root: data/
-  type: credit
-  splits: [0.8, 0.2]
+  type: adult
+  splits: [1.0, 0.0]
 dataloader:
   type: raw
   batch_size: 2000
@@ -27,8 +27,9 @@ train:
     eta: 0.5
 vertical:
   use: True
-  dims: [5, 10]
+  dims: [7, 14]
   algo: 'xgb'
+  eval_protection: 'he'
   data_size_for_debug: 2000
 eval:
   freq: 3

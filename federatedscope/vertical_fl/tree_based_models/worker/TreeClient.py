@@ -4,11 +4,13 @@ import copy
 
 from federatedscope.core.workers import Client
 from federatedscope.core.message import Message
+from federatedscope.vertical_fl.Paillier import \
+            abstract_paillier
 
 logger = logging.getLogger(__name__)
 
 
-class XGBClient(Client):
+class TreeClient(Client):
     def __init__(self,
                  ID=-1,
                  server_id=None,
@@ -21,7 +23,7 @@ class XGBClient(Client):
                  *args,
                  **kwargs):
 
-        super(XGBClient,
+        super(TreeClient,
               self).__init__(ID, server_id, state, config, data, model, device,
                              strategy, *args, **kwargs)
 
@@ -29,6 +31,11 @@ class XGBClient(Client):
         self.own_label = ('y' in data['train'])
         self.msg_buffer = {'train': {}, 'eval': {}}
         self.client_num = self._cfg.federate.client_num
+
+        if self._cfg.vertical.eval_protection == 'he':
+            keys = abstract_paillier.generate_paillier_keypair(
+                n_length=self._cfg.vertical.key_size)
+            self.public_key, self.private_key = keys
 
         self.feature_order = None
         self.merged_feature_order = None
@@ -81,14 +88,15 @@ class XGBClient(Client):
             index=batch_index)
         self.feature_order = feature_order_info['feature_order']
 
-        if self._cfg.vertical.mode == 'order_based':
+        if self._cfg.vertical.mode == 'feature_gathering':
             training_info = feature_order_info
-        elif self._cfg.vertical.mode == 'label_based':
+        elif self._cfg.vertical.mode == 'label_scattering':
             training_info = 'dummy_info'
         else:
-            raise TypeError(f'The expected types of vertical.mode include '
-                            f'["label_based", "order_based"], but got '
-                            f'{self._cfg.vertical.mode}.')
+            raise TypeError(
+                f'The expected types of vertical.mode include '
+                f'["label_scattering", "feature_gathering"], but got '
+                f'{self._cfg.vertical.mode}.')
 
         self.comm_manager.send(
             Message(msg_type='training_info',
@@ -115,7 +123,7 @@ class XGBClient(Client):
         self.msg_buffer['train'].clear()
         self.feature_order = feature_order_info['feature_order']
         self.msg_buffer['train'][self.ID] = feature_order_info \
-            if self._cfg.vertical.mode == 'order_based' else 'dummy_info'
+            if self._cfg.vertical.mode == 'feature_gathering' else 'dummy_info'
         self.state = tree_num
         receiver = [
             each for each in list(self.comm_manager.neighbors.keys())
