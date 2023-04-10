@@ -1,0 +1,2 @@
+train.optimizer.lr: [0.01, 0.02, 0.04, 0.08, 0.1]
+train.local_update_steps: [1, 2, 3, 4]

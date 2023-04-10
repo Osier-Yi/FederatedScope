@@ -1,0 +1,98 @@
+#use_gpu: True
+#device: 0
+#early_stop:
+#  patience: 100
+#seed: 1
+#federate:
+#  mode: standalone
+#  batch_or_epoch: epoch
+#  total_round_num: 200
+#  client_num: 5
+#  share_local_model: True
+#  online_aggr: True
+#data:
+#  root: data/
+#  type: 'CIFAR10@torchvision'
+#  splits: [0.8,0.2,0.0]
+#  batch_size: 32
+#  num_workers: 0
+#  transform: [['ToTensor'], ['Normalize', {'mean': [0.4914, 0.4822, 0.4465], 'std': [0.2470, 0.2435, 0.2616]}]]
+#  args: [{'download': True}]
+#  splitter: 'lda'
+#  splitter_args: [{'alpha': 0.5}]
+#model:
+#  type: convnet2
+#  hidden: 128
+#  out_channels: 10
+#  dropout: 0.0
+#optimizer:
+#  lr: 0.01
+#  weight_decay: 0.0
+#  grad_clip: 5.0
+#criterion:
+#  type: CrossEntropyLoss
+#trainer:
+#  type: cvtrainer
+#eval:
+#  freq: 1
+#  metrics: ['acc', 'correct']
+
+use_gpu: True
+device: 0
+early_stop:
+  patience: 0
+seed: 2
+outdir: 'exp'
+federate:
+  mode: standalone
+  total_round_num: 400
+  sample_client_num: 2
+  merge_test_data: False
+  share_local_model: False
+  client_num: 2
+  sampler: 'uniform'
+  use_diff: True
+  save_to: 'FedAvg_cifar10_fedex_2_clients.pth'
+data:
+  root: data/
+  type: CIFAR10@torchvision
+  args: [{'download': True}]
+  splits: [0.8,0.2,0.2]
+  subsample: 1
+  transform: [['ToTensor'], ['Normalize', {'mean': [0.4914, 0.4822, 0.4465], 'std': [0.2470, 0.2435, 0.2616]}]]
+  splitter: 'lda'
+  splitter_args: [{'alpha': 0.5}]
+dataloader:
+  batch_size: 10
+model:
+  type: convnet2
+  hidden: 512
+  out_channels: 10
+  model_num_per_trainer: 1
+train:
+  local_update_steps: 20
+  batch_or_epoch: batch
+  optimizer:
+    lr: 0.5
+    weight_decay: 0.0
+grad:
+  grad_clip: 5.0
+criterion:
+  type: CrossEntropyLoss
+trainer:
+  type: cvtrainer
+eval:
+  freq: 5
+  metrics: ['acc', 'correct']
+  best_res_update_round_wise_key: 'test_acc'
+
+hpo:
+  fedex:
+    sched: 'aggressive'
+    use: True
+    diff: False
+    eta0: -1.0
+    gamma: 0.0
+    ss: 'scripts/marketplace/exp_scripts/cifar10_ss/ss.yaml'
+  metric: 'client_summarized_weighted_avg.val_avg_loss'
+  working_folder: fedex_cifar10_avg
