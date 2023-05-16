@@ -1,0 +1,66 @@
+use_gpu: True
+device: 0
+early_stop:
+  patience: 0
+seed: 2
+outdir: 'exp_consistent/exp_ls_epoch_alpha_tune_3_clients_1000_20_10_consistent_label_entropy_tau_alpha'
+federate:
+  mode: standalone
+  total_round_num: 400
+  sample_client_num: 3
+  merge_test_data: False
+  share_local_model: False
+  client_num: 3
+  sampler: 'uniform'
+  use_diff: True
+  save_to: 'Alpha_tune_ls_epoch_epoch_FedAvg_cifar10_fedex_3_clients_1000_20_10_consistent_label_entropy_tau_alpha.pth'
+data:
+  root: data/
+  type: CIFAR10@torchvision
+  args: [{'download': True}]
+  splits: [0.8,0.2,0.2]
+  subsample: 0.2
+  transform: [['ToTensor'], ['Normalize', {'mean': [0.4914, 0.4822, 0.4465], 'std': [0.2470, 0.2435, 0.2616]}]]
+  splitter: 'lda'
+  splitter_args: [{'alpha': 0.2}]
+  consistent_label_distribution: True
+dataloader:
+  batch_size: 32
+model:
+  type: convnet2
+  hidden: 512
+  out_channels: 10
+  model_num_per_trainer: 5
+train:
+  local_update_steps: 2
+  batch_or_epoch: epoch
+  optimizer:
+    lr: 0.5
+    weight_decay: 0.0
+grad:
+  grad_clip: 5.0
+criterion:
+  type: CrossEntropyLoss
+trainer:
+  type: cvtrainer
+eval:
+  freq: 5
+  metrics: ['acc', 'correct']
+  best_res_update_round_wise_key: 'test_acc'
+
+marketplace:
+  alpha_tune_use: True
+  alpha_tune:
+    client_bid: [1000,20,10]
+    entropy_determined: True
+
+hpo:
+  fedex:
+    sched: 'aggressive'
+    use: False
+    diff: False
+    eta0: -1.0
+    gamma: 0.0
+    ss: 'scripts/marketplace/example_scripts/cifar10/avg/fedex_grid_search_space_large_v1.yaml'
+  metric: 'client_summarized_weighted_avg.val_avg_loss'
+  working_folder: fedex_epoch_cifar10_avg_alpha_3_clients_1000_20_10_consistent_label_entropy_tau_alpha

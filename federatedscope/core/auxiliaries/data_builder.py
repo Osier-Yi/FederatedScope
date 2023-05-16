@@ -134,6 +134,38 @@ def get_data(config, client_cfgs=None):
 
         # Convert `StandaloneDataDict` to `ClientData` when in distribute mode
         data = convert_data_mode(data, modified_config)
+        import numpy as np
+        for client_id in range(config.federate.client_num):
+            for split in ['train', 'val', 'test']:
+                if split == 'train':
+                    tmp = data[client_id+1].train_data
+                if split == 'val':
+                    tmp = data[client_id+1].val_data
+                if split == 'test':
+                    tmp = data[client_id+1].test_data
+                indices = tmp.indices
+                num_sample = len(indices)
+                targets = [tmp.dataset[item][1] for item in indices]
+                values, counts = np.unique(targets, return_counts=True)
+                density = counts/num_sample
+                label_dist_dict = {}
+                # for i in range(len(values)):
+                label_dist_dict['label'] = values.tolist()
+                label_dist_dict['density'] = density.tolist()
+                label_dist_dict['counts'] = counts.tolist()
+
+                for key in range(10):
+                    if key not in values:
+                        label_dist_dict['label'].append(key)
+                        label_dist_dict['density'].append(0)
+                        label_dist_dict['counts'].append(0)
+                import pandas as pd
+                label_pd = pd.DataFrame(label_dist_dict)
+                label_pd = label_pd.sort_values('label')
+
+
+                logger.info("client: {}, split: {}, sample number: {}, label distribution:\n {}".format(client_id+1, split, num_sample, label_pd))
+        # sum([item == 0 for item in data[1]['test'].dataset.dataset.targets])
     else:
         data = None
 

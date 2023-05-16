@@ -23,6 +23,7 @@ class LDASplitter(BaseSplitter):
 
         tmp_dataset = [ds for ds in dataset]
         label = np.array([y for x, y in tmp_dataset])
+        # np.random.seed(seed=split_seed )
         idx_slice = dirichlet_distribution_noniid_slice(label,
                                                         self.client_num,
                                                         self.alpha,
@@ -31,4 +32,5 @@ class LDASplitter(BaseSplitter):
             data_list = [Subset(dataset, idxs) for idxs in idx_slice]
         else:
             data_list = [[dataset[idx] for idx in idxs] for idxs in idx_slice]
+        # np.random.seed(seed=train_seed )
         return data_list

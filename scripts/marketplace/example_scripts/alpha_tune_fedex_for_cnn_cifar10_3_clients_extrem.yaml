@@ -29,7 +29,7 @@ model:
   type: convnet2
   hidden: 512
   out_channels: 10
-  model_num_per_trainer: 4
+  model_num_per_trainer: 5
 train:
   local_update_steps: 20
   batch_or_epoch: batch

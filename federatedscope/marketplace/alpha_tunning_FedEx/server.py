@@ -15,6 +15,8 @@ import yaml
 logger = logging.getLogger(__name__)
 from itertools import product
 
+from scipy.stats import entropy
+
 
 def is_finish_current_state(check_model_state):
     all_model_finish = False
@@ -79,22 +81,38 @@ class AlphaFedExServer(FedExServer):
 
         self.marketplace_client_bid = config.marketplace.alpha_tune.client_bid
 
+        # update aggregator:
+
+
+
         logger.info("client bid: {}".format(self.marketplace_client_bid))
         self.tau_v = config.marketplace.alpha_tune.tau_v
-        self.tau_alpha = config.marketplace.alpha_tune.tau_alpha
-        self.tau_p = config.marketplace.alpha_tune.tau_p
-
         self.task_value = sum_normalize_func_ep(
             np.array(self.marketplace_client_bid).reshape(1, client_num),
             self.tau_v)
         logger.info('The task value of each clients is: {}'.format(
             self.task_value))
+        if config.marketplace.alpha_tune.entropy_determined:
+            self.tau_alpha = 1.0 / entropy(np.ones(self.client_num)) \
+                             * entropy(self.task_value.flatten())
+        else:
+            self.tau_alpha = config.marketplace.alpha_tune.tau_alpha
+        logger.info("the tau_alpha: {}".format(self.tau_alpha))
+
+        self.tau_p = config.marketplace.alpha_tune.tau_p
 
         self.current_model_idx = 0
 
+        self.model_num = self.client_num + 2
+
+        from federatedscope.marketplace.alpha_tunning_FedEx import AlphaTuneAggretor
+
+        self.aggregators[self.models-1] = AlphaTuneAggretor()
+
         self.check_model_updates = [False for i in range(client_num)]
 
-        self.model_num = self.client_num + 1
+        # global model with alpha tune; global model without alpha tune;
+        # plus model without client i
 
         self.val_info = dict()
 
@@ -136,7 +154,6 @@ class AlphaFedExServer(FedExServer):
         self._diff = config.hpo.fedex.diff
         if self._cfg.hpo.fedex.psn:
             # personalized policy
-
             # in this version no psn
             # TODO: client-wise RFF
             self._client_encodings = torch.randn(
@@ -183,13 +200,12 @@ class AlphaFedExServer(FedExServer):
         inf_matrix = np.zeros([self.client_num, self.client_num])
 
         # here client start from 0
-
-        for row_id, col_id in zip(range(self.client_num),
-                                  range(self.client_num)):
-            global_id = self.model_num - 1
-            inf_matrix[row_id, col_id] = \
-                self.val_info[self.state][row_id][col_id][metric_name] - \
-                self.val_info[self.state][global_id][col_id][metric_name]
+        global_id = self.model_num - 2
+        for row_id in range(self.client_num):
+            for col_id in range(self.client_num):
+                inf_matrix[row_id, col_id] = \
+                    self.val_info[self.state][row_id][col_id][metric_name] - \
+                    self.val_info[self.state][global_id][col_id][metric_name]
         self.influence_matrix_info[self.state] = inf_matrix
         logger.info("Round: {}, Model:{}, influence matrix: {}".format(
             self.state, self.current_model_idx, inf_matrix))

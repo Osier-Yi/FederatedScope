@@ -1,0 +1,11 @@
+CUDA_VISIBLE_DEVICES=0 python federatedscope/main.py --cfg scripts/marketplace/example_scripts/ls_run_scripts_repeated_exp/two_clients/alpha_tune_fedex_for_cifar10_2_client_1000:0_seed_222_tmp_alpha_10.yaml &
+CUDA_VISIBLE_DEVICES=0 python federatedscope/main.py --cfg scripts/marketplace/example_scripts/ls_run_scripts_repeated_exp/two_clients/alpha_tune_fedex_for_cifar10_2_client_1000:0_seed_333_entropy.yaml &
+
+CUDA_VISIBLE_DEVICES=1 python federatedscope/main.py --cfg scripts/marketplace/example_scripts/ls_run_scripts_repeated_exp/two_clients/alpha_tune_fedex_for_cifar10_2_client_1000:0_seed_444_entropy.yaml &
+CUDA_VISIBLE_DEVICES=1 python federatedscope/main.py --cfg scripts/marketplace/example_scripts/ls_run_scripts_repeated_exp/two_clients/alpha_tune_fedex_for_cifar10_2_client_1000:0_seed_444_tmp_alpha_10.yaml &
+CUDA_VISIBLE_DEVICES=1 python federatedscope/main.py --cfg scripts/marketplace/example_scripts/ls_run_scripts_repeated_exp/two_clients/alpha_tune_fedex_for_cifar10_2_client_1000:0_seed_555_entropy.yaml &
+
+
+CUDA_VISIBLE_DEVICES=2 python federatedscope/main.py --cfg scripts/marketplace/example_scripts/ls_run_scripts_repeated_exp/two_clients/alpha_tune_fedex_for_cifar10_2_client_1000:0_seed_555_tmp_alpha_10.yaml &
+CUDA_VISIBLE_DEVICES=2 python federatedscope/main.py --cfg scripts/marketplace/example_scripts/ls_run_scripts_repeated_exp/three_clients/alpha_tune_fedex_for_cifar10_3_client_10:20:50_seed_111_entropy.yaml &
+CUDA_VISIBLE_DEVICES=2 python federatedscope/main.py --cfg scripts/marketplace/example_scripts/ls_run_scripts_repeated_exp/three_clients/alpha_tune_fedex_for_cifar10_3_client_10:20:50_seed_111_tmp_alpha_10.yaml &
