@@ -85,3 +85,5 @@ def dirichlet_distribution_noniid_slice(label,
     for i in range(client_num):
         np.random.shuffle(idx_slice[i])
     return idx_slice
+
+

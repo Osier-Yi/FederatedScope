@@ -83,7 +83,7 @@ if __name__ == '__main__':
     #         client_bid: [1000, 0]
     #         entropy_determined: True
 
-    total_round = 206
+    total_round = 1000
 
     seed = [111, 222, 333, 444, 555]
 
@@ -110,16 +110,34 @@ if __name__ == '__main__':
 
 
     tau_alpha = [1]
-    outdir_root = 'exp_consistent_repeat_small_lr'
+    outdir_root = 'exp_consistent_repeat_no_search_epoch_sche_multistep_lr_label_splitter'
     our_dir_name_prefix = 'exp_ls_epoch_alpha_tune_'
     yaml_file_name_prefix = 'alpha_tune_fedex_for_cifar10_'
-    yaml_root = 'scripts/marketplace/example_scripts/ls_run_scripts_repeated_exp_small_lr'
-    check_dir(yaml_root)
-    yaml_root = os.path.join(yaml_root, 'two_clients')
+    ss = 'scripts/marketplace/example_scripts/cifar10/avg/fedex_grid_search_space_no_search_epoch_sche_ver.yaml'
+    yaml_root_dir = 'scripts/marketplace/example_scripts/ls_run_scripts_repeated_no_search_epoch_sche_multistep_lr_label_splitter'
+    sh_pth = 'scripts/marketplace/rep_sh_epoch_sche_multistep_lr_label_splitter'
+    change_splitter = True
+    splitter_args_alpha = 0.01
+    splitter_name = 'alpha_tune_cifar10_splitter'
+
+
+    check_dir(yaml_root_dir)
+    yaml_root = os.path.join(yaml_root_dir, 'two_clients')
     check_dir(yaml_root)
 
     inf_matrix_pth_prefix = 'info_matrix/{}_clients_{}_inf_matrix.pickle'
     # inf_matrix_pth_prefix = ''
+    use_batch = False
+    batch_size = 64
+    use_sche = True
+    sche_type = 'multisteplr'
+    # use_update_hp = True
+    update_hp = False
+
+    local_update_steps = 1
+    lr = 0.1
+
+
 
 
 
@@ -128,7 +146,7 @@ if __name__ == '__main__':
 
     yaml_file_pth_list_two_clients = []
     yaml_file_pth_list_three_clients = []
-    ss = 'scripts/marketplace/example_scripts/cifar10/avg/fedex_grid_search_space_no_search.yaml'
+
 
     original_yaml_file_2 = 'scripts/marketplace/example_scripts/ls_run_scripts/alpha_tune_fedex_for_cifar10_2_clients_0_10.yaml'
     with open(original_yaml_file_2, 'r') as f:
@@ -140,6 +158,24 @@ if __name__ == '__main__':
                     # original_yaml['train']['optimizer']['batch_or_epoch'] = batch_or_epoch
                     # original_yaml['train']['optimizer']['local_update_steps'] = local_update_steps
                     # original_yaml['train']['optimizer']['lr'] = train_lr
+                    original_yaml['dataloader']['batch_size'] = batch_size
+                    if change_splitter:
+                        if 'splitter' not in original_yaml['data']:
+                            original_yaml['data']['splitter'] = dict()
+                        original_yaml['data']['splitter'] = splitter_name
+                        original_yaml['data']['splitter_args']=[{'alpha':splitter_args_alpha}]
+                    if use_batch:
+                        original_yaml['train']['batch_or_epoch'] = 'batch'
+                    if use_sche:
+                        # print(original_yaml['train'].keys())
+                        if 'scheduler' not in original_yaml['train'].keys():
+                            original_yaml['train']['scheduler'] = dict()
+                        original_yaml['train']['scheduler']['type'] = sche_type
+                    if update_hp == False:
+                        if 'update_hp' not in original_yaml['marketplace']['alpha_tune'].keys():
+                            original_yaml['marketplace']['alpha_tune']['update_hp'] = update_hp
+                        original_yaml['train']['local_update_steps']=local_update_steps
+                        original_yaml['train']['optimizer']['lr'] = lr
                     original_yaml['hpo']['fedex'][
                         'ss'] = ss
                     original_yaml['marketplace']['alpha_tune'][
@@ -193,7 +229,8 @@ if __name__ == '__main__':
 
 
         original_yaml_file_3 = 'scripts/marketplace/example_scripts/ls_run_scripts/alpha_tune_fedex_for_cnn_cifar10_3_clients_50_20_10.yaml'
-        yaml_root = 'scripts/marketplace/example_scripts/ls_run_scripts_repeated_exp_small_lr/three_clients'
+        # yaml_root = 'scripts/marketplace/example_scripts/ls_run_scripts_repeated_exp_small_lr/three_clients'
+        yaml_root = os.path.join(yaml_root_dir, 'three_clients')
         check_dir(yaml_root)
         with open(original_yaml_file_3, 'r') as f:
             original_yaml = yaml.safe_load(f)
@@ -201,6 +238,24 @@ if __name__ == '__main__':
             for client_bid in client_bid_3:
                 for seed_val in seed:
                     for train_weight_val in train_weight_3:
+                        original_yaml['dataloader']['batch_size'] = batch_size
+
+                        if change_splitter:
+                            if 'splitter' not in original_yaml['data']:
+                                original_yaml['data']['splitter'] = dict()
+                            original_yaml['data']['splitter'] = splitter_name
+                            original_yaml['data']['splitter_args']=[{'alpha':splitter_args_alpha}]
+
+                        if use_batch:
+                            original_yaml['train']['batch_or_epoch'] = 'batch'
+                        if use_sche:
+                            # print(original_yaml['train'].keys())
+                            if 'scheduler' not in original_yaml['train'].keys():
+                                original_yaml['train']['scheduler'] = dict()
+                            original_yaml['train']['scheduler']['type'] = sche_type
+                        if update_hp == False:
+                            if 'update_hp' not in original_yaml['marketplace']['alpha_tune'].keys():
+                                original_yaml['marketplace']['alpha_tune']['update_hp'] = update_hp
                         # original_yaml['train']['optimizer']['lr'] = train_lr
                         original_yaml['hpo']['fedex'][
                             'ss'] = ss
@@ -273,7 +328,7 @@ if __name__ == '__main__':
     sh_text = ''
     new_sh = True
     limit = per_gpu_running * len(available_gpu)
-    sh_pth = 'scripts/marketplace/rep_sh_small_lr'
+
     check_dir(sh_pth)
 
     while len(optional_run_set) > 0 or len(top_run_set) > 0:

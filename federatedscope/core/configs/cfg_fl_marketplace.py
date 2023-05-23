@@ -23,6 +23,10 @@ def extend_marketplace_cfg(cfg):
     cfg.marketplace.alpha_tune.tau_alpha = 1.0
     cfg.marketplace.alpha_tune.tau_p = 1.0
     cfg.marketplace.alpha_tune.entropy_determined = False
+    cfg.marketplace.alpha_tune.train_weight_control = False
+    cfg.marketplace.alpha_tune.train_weight = []
+    cfg.marketplace.alpha_tune.info_matrix_pth = ''
+    cfg.marketplace.alpha_tune.update_hp = True
 
     # --------------- register corresponding check function ----------
     cfg.register_cfg_check_fun(assert_marketplace_cfg)
@@ -50,6 +54,9 @@ def assert_marketplace_cfg(cfg):
                                             'cfg.model.model_num_per_trainer' \
                                             'must equal to ' \
                                             'cfg.federate.client_num plus 2'
+    if cfg.marketplace.alpha_tune.train_weight_control:
+        assert len(cfg.marketplace.alpha_tune.train_weight) \
+               == len(cfg.marketplace.alpha_tune.client_bid)
 
 
 register_config("marketplace", extend_marketplace_cfg)

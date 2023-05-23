@@ -116,6 +116,8 @@ class GeneralTorchTrainer(Trainer):
                                     "on_batch_backward")
         self.register_hook_in_train(self._hook_on_batch_end, "on_batch_end")
         self.register_hook_in_train(self._hook_on_fit_end, "on_fit_end")
+        self.register_hook_in_train(self._hook_on_fit_end_store_scheduler_state, "on_fit_end")
+
 
     def register_default_hooks_ft(self):
         self.register_hook_in_ft(self._hook_on_fit_start_init, "on_fit_start")
@@ -174,6 +176,24 @@ class GeneralTorchTrainer(Trainer):
                                           **ctx.cfg[ctx.cur_mode].optimizer)
             ctx.scheduler = get_scheduler(ctx.optimizer,
                                           **ctx.cfg[ctx.cur_mode].scheduler)
+            if hasattr(ctx, 'scheduler_last_state'):
+                # load the last round's scheduler state
+                ctx.scheduler.load_state_dict(ctx.scheduler_last_state)
+                logger.info('ctx.scheduler.load_state_dict(ctx.scheduler_last_state) is sucessful')
+                print(ctx.scheduler_last_state)
+
+                # replace the newly initialized optimizier's lr to the last round lr; scheduler.step() requires
+                # optimizer's last round lr for updating.
+                for i, data in enumerate(zip(ctx.scheduler.optimizer.param_groups, ctx.scheduler_last_state['_last_lr'])):
+                    param_group, lr = data
+                    param_group['lr'] = lr
+                    # self.print_lr(self.verbose, i, lr, epoch)
+
+
+
+
+
+
 
         # TODO: the number of batch and epoch is decided by the current mode
         #  and data split, so the number of batch and epoch should be
@@ -228,6 +248,8 @@ class GeneralTorchTrainer(Trainer):
                     ReIterator(ctx.get("{}_loader".format(ctx.cur_split))))
         else:
             ctx.get("{}_loader".format(ctx.cur_split)).reset()
+
+
 
     def _hook_on_batch_start_init(self, ctx):
         """
@@ -360,8 +382,9 @@ class GeneralTorchTrainer(Trainer):
                                            ctx.grad_clip)
 
         ctx.optimizer.step()
-        if ctx.scheduler is not None:
-            ctx.scheduler.step()
+        # if ctx.scheduler is not None:
+        #     ctx.scheduler.step()
+            # ctx.scheduler.step(epoch=ctx.cur_round)
 
     def _hook_on_batch_end(self, ctx):
         """
@@ -405,6 +428,25 @@ class GeneralTorchTrainer(Trainer):
         ctx.ys_prob = CtxVar(np.concatenate(ctx.ys_prob), LIFECYCLE.ROUTINE)
         results = ctx.monitor.eval(ctx)
         setattr(ctx, 'eval_metrics', results)
+
+    def _hook_on_fit_end_store_scheduler_state(self, ctx):
+
+
+        if ctx.scheduler is not None:
+            ctx.scheduler.step()
+            if hasattr(ctx, 'scheduler_last_state'):
+                ctx.scheduler_last_state = ctx.scheduler.state_dict()
+            else:
+                setattr(ctx, 'scheduler_last_state', ctx.scheduler.state_dict())
+            # logging lr info
+            for i, data in enumerate(zip(ctx.scheduler.optimizer.param_groups, ctx.scheduler_last_state['_last_lr'])):
+                param_group, lr = data
+                param_group['lr'] = lr
+                logger.info('Adjusting learning rate'
+                      ' of group {} to {:.4e}.'.format(i, lr))
+
+
+
 
     def save_model(self, path, cur_round=-1):
         assert self.ctx.model is not None

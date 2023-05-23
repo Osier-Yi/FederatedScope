@@ -2,6 +2,7 @@ from federatedscope.core.aggregators import ClientsAvgAggregator
 from federatedscope.core.auxiliaries.utils import param2tensor
 import torch
 import logging
+logger = logging.getLogger(__name__)
 
 class AlphaTuneAggretor(ClientsAvgAggregator):
     def __init__(self, model=None, device='cpu', config=None):
@@ -9,11 +10,11 @@ class AlphaTuneAggretor(ClientsAvgAggregator):
         self.model = model
         self.device = device
         self.cfg = config
-        self.weight = self.cfg.marketplace.train_weight
+        self.weight = self.cfg.marketplace.alpha_tune.train_weight
 
     def update_train_weight(self):
-        logging.info('Current weight: {}'.format(self.weight))
-
+        # TODO update the weight
+        logger.info('Current weight: {}'.format(self.weight))
 
     def aggregate(self, agg_info):
         """
@@ -25,6 +26,8 @@ class AlphaTuneAggretor(ClientsAvgAggregator):
         Returns:
             dict: the aggregated results
         """
+        self.update_train_weight()
+        # logger.info()
 
         models = agg_info["client_feedback"]
         recover_fun = agg_info['recover_fun'] if (
@@ -32,11 +35,12 @@ class AlphaTuneAggretor(ClientsAvgAggregator):
         avg_model = self._para_weighted_avg(models, recover_fun=recover_fun)
 
         return avg_model
+
     def _para_weighted_avg(self, models, recover_fun=None):
         """
         Calculates the weighted average of models.
         """
-        logging.info("aggregation weight: {}".format(self.weight))
+        logger.info("aggregation weight: {}".format(self.weight))
 
         training_set_size = 0
         for i in range(len(models)):
@@ -57,7 +61,6 @@ class AlphaTuneAggretor(ClientsAvgAggregator):
                 #     weight = 1.0
                 # else:
                 #     weight = local_sample_size / training_set_size
-
 
                 if not self.cfg.federate.use_ss:
                     local_model[key] = param2tensor(local_model[key])

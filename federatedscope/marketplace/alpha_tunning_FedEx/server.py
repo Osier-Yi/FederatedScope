@@ -81,7 +81,13 @@ class AlphaFedExServer(FedExServer):
 
         self.marketplace_client_bid = config.marketplace.alpha_tune.client_bid
 
-        # update aggregator:
+        if len(config.marketplace.alpha_tune.info_matrix_pth)>0:
+            self.has_info_matrix = True
+            import pickle
+            f = open(config.marketplace.alpha_tune.info_matrix_pth, 'rb')
+            self.info_matrix_all = pickle.load(f)
+        else:
+            self.has_info_matrix = False
 
 
 
@@ -103,11 +109,24 @@ class AlphaFedExServer(FedExServer):
 
         self.current_model_idx = 0
 
-        self.model_num = self.client_num + 2
 
-        from federatedscope.marketplace.alpha_tunning_FedEx import AlphaTuneAggretor
+        if self.has_info_matrix:
+            self.model_num = 1
+            self.models = [self.models[0]]
+        else:
 
-        self.aggregators[self.models-1] = AlphaTuneAggretor()
+            self.model_num = self.client_num + 2
+
+        if config.marketplace.alpha_tune.train_weight_control:
+            from federatedscope.marketplace.alpha_tunning_FedEx import AlphaTuneAggretor
+
+            logger.info('Replace the last aggregator to AlphaTuneAggretor')
+
+            self.aggregators[self.model_num - 1] = AlphaTuneAggretor(model=model,
+                                                                  device=device,
+                                                                  config=config)
+
+
 
         self.check_model_updates = [False for i in range(client_num)]
 
@@ -197,19 +216,33 @@ class AlphaFedExServer(FedExServer):
             info['client_id']] = info
 
     def update_influence_matrix(self, metric_name='val_avg_loss_before'):
-        inf_matrix = np.zeros([self.client_num, self.client_num])
 
-        # here client start from 0
-        global_id = self.model_num - 2
-        for row_id in range(self.client_num):
-            for col_id in range(self.client_num):
-                inf_matrix[row_id, col_id] = \
-                    self.val_info[self.state][row_id][col_id][metric_name] - \
-                    self.val_info[self.state][global_id][col_id][metric_name]
-        self.influence_matrix_info[self.state] = inf_matrix
-        logger.info("Round: {}, Model:{}, influence matrix: {}".format(
-            self.state, self.current_model_idx, inf_matrix))
-        return inf_matrix
+        if self.has_info_matrix:
+            try:
+                inf_matrix = self.info_matrix_all[self.state]
+                self.last_round_inf_matrix = inf_matrix
+            except:
+                logger.info("existing inf matrix not has inf matrix of round: {}, replaced with last round!".format(self.state))
+                inf_matrix = self.last_round_inf_matrix
+            logger.info("Round: {}, Model:{}, influence matrix (Exist): {}".format(
+                self.state, self.current_model_idx, inf_matrix))
+            self.influence_matrix_info[self.state] = inf_matrix
+            return inf_matrix
+        else:
+            inf_matrix = np.zeros([self.client_num, self.client_num])
+
+            # here client start from 0
+            global_id = self.model_num - 2
+            for row_id in range(self.client_num):
+                for col_id in range(self.client_num):
+                    inf_matrix[row_id, col_id] = \
+                        self.val_info[self.state][row_id][col_id][metric_name] - \
+                        self.val_info[self.state][global_id][col_id][metric_name]
+            self.influence_matrix_info[self.state] = inf_matrix
+            logger.info("Round: {}, Model:{}, influence matrix: {}".format(
+                self.state, self.current_model_idx, inf_matrix))
+            return inf_matrix
+
 
     def update_alpha(self):
         self.update_influence_matrix()
@@ -229,7 +262,7 @@ class AlphaFedExServer(FedExServer):
             pickle.dump(self.val_info,
                         outfile,
                         protocol=pickle.HIGHEST_PROTOCOL)
-        with open(os.path.join(self._cfg.outdir, "inf_matrix.pickle"),
+        with open(os.path.join(self._cfg.outdir, "3_clients_111_inf_matrix.pickle"),
                   "wb") as outfile:
             pickle.dump(self.influence_matrix_info,
                         outfile,
@@ -514,22 +547,30 @@ class AlphaFedExServer(FedExServer):
                 # Get all the message
                 train_msg_buffer = self.msg_buffer['train'][self.state]
                 model = self.models[self.current_model_idx]
+                logger.info('self.current_model_idx: {}'.format(self.current_model_idx))
                 aggregator = self.aggregators[self.current_model_idx]
                 msg_list = list()
                 # in train_msg_buffer, client_id start from 1 ....
-                for client_id in train_msg_buffer:
-                    self.update_val_info(train_msg_buffer[client_id][2])
-                    if client_id - 1 != self.current_model_idx:
-                        logger.info(
-                            'add client: {} update to model: {}'.format(
-                                client_id, self.current_model_idx))
-                        # model id = i means that this model
-                        # represents the model without client i+1
-                        # ** e.x.: total 3 clients, model id [0,1,2,3];
-                        # *** model_id = 0: model without client 1
+                if self.has_info_matrix:
+                    for client_id in train_msg_buffer:
                         msg_list.append(tuple(
                             train_msg_buffer[client_id][0:2]))
                         mab_feedbacks.append(train_msg_buffer[client_id][2])
+                else:
+                    for client_id in train_msg_buffer:
+                        self.update_val_info(train_msg_buffer[client_id][2])
+                        if client_id - 1 != self.current_model_idx:
+                            logger.info(
+                                'add client: {} update to model: {}'.format(
+                                    client_id, self.current_model_idx))
+                            # model id = i means that this model
+                            # represents the model without client i+1
+                            # ** e.x.: total 3 clients, model id [0,1,2,3];
+                            # *** model_id = 0: model without client 1
+                            msg_list.append(tuple(
+                                train_msg_buffer[client_id][0:2]))
+                            mab_feedbacks.append(train_msg_buffer[client_id][2])
+
 
                 # Trigger the monitor here (for training)
                 self._monitor.calc_model_metric(

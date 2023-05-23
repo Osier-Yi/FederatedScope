@@ -27,9 +27,17 @@ class AlphaFedExClient(FedExClient):
         }
         logger.info(json.dumps(attempt))
 
-        self._apply_hyperparams(hyperparams)
+        if self._cfg.marketplace.alpha_tune.update_hp:
+
+            logger.info('==== updating hyperparams =====')
+
+            self._apply_hyperparams(hyperparams)
 
         self.trainer.update(model_params)
+        # logger.info("self.trainer.ctx.scheduler.get_last_lr(): ".format(self.trainer.ctx.scheduler.get_last_lr()))
+        # logger.info("self.trainer.ctx.scheduler._step_count: ".format(self.trainer.ctx.scheduler._step_count))
+
+        # self._step_coun
 
         # self.model.load_state_dict(content)
         self.state = round

@@ -213,7 +213,7 @@ class AlphaFedExServerOldVersion(FedExServer):
             pickle.dump(self.val_info,
                         outfile,
                         protocol=pickle.HIGHEST_PROTOCOL)
-        with open(os.path.join(self._cfg.outdir, "inf_matrix.pickle"),
+        with open(os.path.join(self._cfg.outdir, "3_clients_111_inf_matrix.pickle"),
                   "wb") as outfile:
             pickle.dump(self.influence_matrix_info,
                         outfile,

@@ -1,0 +1,8 @@
+#train.optimizer.lr: [0.01, 0.02, 0.04, 0.08]
+#train.optimizer.momentum: [0.1, 0.2, 0.4, 0.8]
+#large ss
+#train.optimizer.lr: [0.01, 0.02, 0.04, 0.06, 0.08, 0.1, 0.2, 0.4, 0.6, 0.8]
+#train.local_update_steps: [1, 2, 3, 4, 20, 30, 40, 50]
+#dataloader.batch_size: [16, 32, 64]
+train.optimizer.lr: [0.1]
+train.local_update_steps: [40]
