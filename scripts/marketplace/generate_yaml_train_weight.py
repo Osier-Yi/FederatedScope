@@ -110,15 +110,17 @@ if __name__ == '__main__':
 
 
     tau_alpha = [1]
-    outdir_root = 'exp_consistent_repeat_no_search_epoch_sche_multistep_lr_label_splitter'
+    outdir_root = 'exp_consistent_repeat_no_search_epoch_sche_multistep_lr_label_splitter_more_metric'
     our_dir_name_prefix = 'exp_ls_epoch_alpha_tune_'
     yaml_file_name_prefix = 'alpha_tune_fedex_for_cifar10_'
     ss = 'scripts/marketplace/example_scripts/cifar10/avg/fedex_grid_search_space_no_search_epoch_sche_ver.yaml'
-    yaml_root_dir = 'scripts/marketplace/example_scripts/ls_run_scripts_repeated_no_search_epoch_sche_multistep_lr_label_splitter'
-    sh_pth = 'scripts/marketplace/rep_sh_epoch_sche_multistep_lr_label_splitter'
+    yaml_root_dir = 'scripts/marketplace/example_scripts/ls_run_scripts_repeated_no_search_epoch_sche_multistep_lr_label_splitter_more_metric'
+    sh_pth = 'scripts/marketplace/rep_sh_epoch_sche_multistep_lr_label_splitter_more_metric'
     change_splitter = True
     splitter_args_alpha = 0.01
     splitter_name = 'alpha_tune_cifar10_splitter'
+    add_eval_metric = True
+    metric_list = ['acc', 'correct',  'f1', 'roc_auc']
 
 
     check_dir(yaml_root_dir)
@@ -164,6 +166,10 @@ if __name__ == '__main__':
                             original_yaml['data']['splitter'] = dict()
                         original_yaml['data']['splitter'] = splitter_name
                         original_yaml['data']['splitter_args']=[{'alpha':splitter_args_alpha}]
+                    if add_eval_metric:
+                        if 'metrics' not in original_yaml['eval']:
+                            original_yaml['eval']['metrics'] = dict()
+                        original_yaml['eval']['metrics'] = metric_list
                     if use_batch:
                         original_yaml['train']['batch_or_epoch'] = 'batch'
                     if use_sche:
@@ -245,6 +251,10 @@ if __name__ == '__main__':
                                 original_yaml['data']['splitter'] = dict()
                             original_yaml['data']['splitter'] = splitter_name
                             original_yaml['data']['splitter_args']=[{'alpha':splitter_args_alpha}]
+                        if add_eval_metric:
+                            if 'metrics' not in original_yaml['eval']:
+                                original_yaml['eval']['metrics'] = dict()
+                            original_yaml['eval']['metrics'] = metric_list
 
                         if use_batch:
                             original_yaml['train']['batch_or_epoch'] = 'batch'
@@ -318,6 +328,9 @@ if __name__ == '__main__':
     print(len(yaml_file_pth_list_two_clients))
     print(len(top_run_set))
     print(len(optional_run_set))
+
+    top_run_set = yaml_file_pth_list_two_clients
+    optional_run_set = []
 
     total_run = (len(yaml_file_pth_list_three_clients) +
                  len(yaml_file_pth_list_two_clients)) / (len(available_gpu) *

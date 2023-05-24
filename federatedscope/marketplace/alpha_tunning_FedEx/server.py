@@ -543,19 +543,23 @@ class AlphaFedExServer(FedExServer):
 
             if not check_eval_result:  # in the training process
 
-                mab_feedbacks = list()
+                tmp_mab_feedbacks = list()
                 # Get all the message
                 train_msg_buffer = self.msg_buffer['train'][self.state]
                 model = self.models[self.current_model_idx]
                 logger.info('self.current_model_idx: {}'.format(self.current_model_idx))
                 aggregator = self.aggregators[self.current_model_idx]
-                msg_list = list()
+                tmp_msg_list = list()
                 # in train_msg_buffer, client_id start from 1 ....
+                client_id_order = []
                 if self.has_info_matrix:
+
                     for client_id in train_msg_buffer:
-                        msg_list.append(tuple(
+                        client_id_order.append(client_id-1)
+                        tmp_msg_list.append(tuple(
                             train_msg_buffer[client_id][0:2]))
-                        mab_feedbacks.append(train_msg_buffer[client_id][2])
+                        tmp_mab_feedbacks.append(train_msg_buffer[client_id][2])
+
                 else:
                     for client_id in train_msg_buffer:
                         self.update_val_info(train_msg_buffer[client_id][2])
@@ -567,9 +571,18 @@ class AlphaFedExServer(FedExServer):
                             # represents the model without client i+1
                             # ** e.x.: total 3 clients, model id [0,1,2,3];
                             # *** model_id = 0: model without client 1
-                            msg_list.append(tuple(
+                            tmp_msg_list.append(tuple(
                                 train_msg_buffer[client_id][0:2]))
-                            mab_feedbacks.append(train_msg_buffer[client_id][2])
+                            tmp_mab_feedbacks.append(train_msg_buffer[client_id][2])
+
+                # change the order of tmp_mab_feedbacks & tmp_mab_feedbacks according to client id
+                # ensure msg_list[i] and mab_feedbacks[i] is the client i+1's information
+                msg_list = ['*']*len(client_id_order)
+                mab_feedbacks = ['*']*len(client_id_order)
+                for order_id in range(len(client_id_order)):
+                    msg_list[client_id_order[order_id]] = tmp_msg_list[order_id]
+                    mab_feedbacks[client_id_order[order_id]] = tmp_mab_feedbacks[order_id]
+
 
 
                 # Trigger the monitor here (for training)
