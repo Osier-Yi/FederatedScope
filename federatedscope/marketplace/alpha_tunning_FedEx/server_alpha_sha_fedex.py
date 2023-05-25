@@ -9,6 +9,7 @@ from federatedscope.autotune.fedex.utils import HyperNet
 from numpy.linalg import norm
 from scipy.special import logsumexp
 import torch
+import copy
 
 import yaml
 
@@ -98,8 +99,11 @@ class AlphaFedExShaServer(FedExServer):
 
         self.model_num_sha = len(self.aggregation_weight_candidates)
         self.model_num = self.client_num + 1 + self.model_num_sha
-        self.models = [self.models[0] for i in range(self.model_num)]
-        self.aggregators = [self.aggregators[0] for i in range(self.model_num)]
+        tmp_model = copy.deepcopy(self.models[0])
+
+        self.models = [copy.deepcopy(tmp_model) for i in range(self.model_num)]
+        tmp_agg= copy.deepcopy(self.aggregators[0])
+        self.aggregators = [copy.deepcopy(tmp_agg) for i in range(self.model_num)]
         logger.info('self.model_num_sha: {}, '
                     'self.model_num: {}'.format(self.model_num_sha, self.model_num))
 
