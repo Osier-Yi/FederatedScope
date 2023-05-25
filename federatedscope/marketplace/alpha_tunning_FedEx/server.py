@@ -81,15 +81,13 @@ class AlphaFedExServer(FedExServer):
 
         self.marketplace_client_bid = config.marketplace.alpha_tune.client_bid
 
-        if len(config.marketplace.alpha_tune.info_matrix_pth)>0:
+        if len(config.marketplace.alpha_tune.info_matrix_pth) > 0:
             self.has_info_matrix = True
             import pickle
             f = open(config.marketplace.alpha_tune.info_matrix_pth, 'rb')
             self.info_matrix_all = pickle.load(f)
         else:
             self.has_info_matrix = False
-
-
 
         logger.info("client bid: {}".format(self.marketplace_client_bid))
         self.tau_v = config.marketplace.alpha_tune.tau_v
@@ -109,7 +107,6 @@ class AlphaFedExServer(FedExServer):
 
         self.current_model_idx = 0
 
-
         if self.has_info_matrix:
             self.model_num = 1
             self.models = [self.models[0]]
@@ -122,13 +119,10 @@ class AlphaFedExServer(FedExServer):
 
             logger.info('Replace the last aggregator to AlphaTuneAggretor')
 
-            self.aggregators[self.model_num - 1] = AlphaTuneAggretor(model=model,
-                                                                  device=device,
-                                                                  config=config)
+            self.aggregators[self.model_num - 1] = AlphaTuneAggretor(
+                model=model, device=device, config=config)
 
-
-
-        self.check_model_updates = [False for i in range(client_num)]
+        # self.check_model_updates = [False for i in range(client_num)]
 
         # global model with alpha tune; global model without alpha tune;
         # plus model without client i
@@ -222,10 +216,13 @@ class AlphaFedExServer(FedExServer):
                 inf_matrix = self.info_matrix_all[self.state]
                 self.last_round_inf_matrix = inf_matrix
             except:
-                logger.info("existing inf matrix not has inf matrix of round: {}, replaced with last round!".format(self.state))
+                logger.info(
+                    "existing inf matrix not has inf matrix of round: {}, replaced with last round!"
+                    .format(self.state))
                 inf_matrix = self.last_round_inf_matrix
-            logger.info("Round: {}, Model:{}, influence matrix (Exist): {}".format(
-                self.state, self.current_model_idx, inf_matrix))
+            logger.info(
+                "Round: {}, Model:{}, influence matrix (Exist): {}".format(
+                    self.state, self.current_model_idx, inf_matrix))
             self.influence_matrix_info[self.state] = inf_matrix
             return inf_matrix
         else:
@@ -242,7 +239,6 @@ class AlphaFedExServer(FedExServer):
             logger.info("Round: {}, Model:{}, influence matrix: {}".format(
                 self.state, self.current_model_idx, inf_matrix))
             return inf_matrix
-
 
     def update_alpha(self):
         self.update_influence_matrix()
@@ -262,8 +258,10 @@ class AlphaFedExServer(FedExServer):
             pickle.dump(self.val_info,
                         outfile,
                         protocol=pickle.HIGHEST_PROTOCOL)
-        with open(os.path.join(self._cfg.outdir, "3_clients_111_inf_matrix.pickle"),
-                  "wb") as outfile:
+        with open(
+                os.path.join(self._cfg.outdir,
+                             "3_clients_111_inf_matrix.pickle"),
+                "wb") as outfile:
             pickle.dump(self.influence_matrix_info,
                         outfile,
                         protocol=pickle.HIGHEST_PROTOCOL)
@@ -547,7 +545,8 @@ class AlphaFedExServer(FedExServer):
                 # Get all the message
                 train_msg_buffer = self.msg_buffer['train'][self.state]
                 model = self.models[self.current_model_idx]
-                logger.info('self.current_model_idx: {}'.format(self.current_model_idx))
+                logger.info('self.current_model_idx: {}'.format(
+                    self.current_model_idx))
                 aggregator = self.aggregators[self.current_model_idx]
                 tmp_msg_list = list()
                 # in train_msg_buffer, client_id start from 1 ....
@@ -555,10 +554,11 @@ class AlphaFedExServer(FedExServer):
                 if self.has_info_matrix:
 
                     for client_id in train_msg_buffer:
-                        client_id_order.append(client_id-1)
-                        tmp_msg_list.append(tuple(
-                            train_msg_buffer[client_id][0:2]))
-                        tmp_mab_feedbacks.append(train_msg_buffer[client_id][2])
+                        client_id_order.append(client_id - 1)
+                        tmp_msg_list.append(
+                            tuple(train_msg_buffer[client_id][0:2]))
+                        tmp_mab_feedbacks.append(
+                            train_msg_buffer[client_id][2])
 
                 else:
                     for client_id in train_msg_buffer:
@@ -571,19 +571,20 @@ class AlphaFedExServer(FedExServer):
                             # represents the model without client i+1
                             # ** e.x.: total 3 clients, model id [0,1,2,3];
                             # *** model_id = 0: model without client 1
-                            tmp_msg_list.append(tuple(
-                                train_msg_buffer[client_id][0:2]))
-                            tmp_mab_feedbacks.append(train_msg_buffer[client_id][2])
+                            tmp_msg_list.append(
+                                tuple(train_msg_buffer[client_id][0:2]))
+                            tmp_mab_feedbacks.append(
+                                train_msg_buffer[client_id][2])
 
                 # change the order of tmp_mab_feedbacks & tmp_mab_feedbacks according to client id
                 # ensure msg_list[i] and mab_feedbacks[i] is the client i+1's information
-                msg_list = ['*']*len(client_id_order)
-                mab_feedbacks = ['*']*len(client_id_order)
+                msg_list = ['*'] * len(client_id_order)
+                mab_feedbacks = ['*'] * len(client_id_order)
                 for order_id in range(len(client_id_order)):
-                    msg_list[client_id_order[order_id]] = tmp_msg_list[order_id]
-                    mab_feedbacks[client_id_order[order_id]] = tmp_mab_feedbacks[order_id]
-
-
+                    msg_list[
+                        client_id_order[order_id]] = tmp_msg_list[order_id]
+                    mab_feedbacks[client_id_order[
+                        order_id]] = tmp_mab_feedbacks[order_id]
 
                 # Trigger the monitor here (for training)
                 self._monitor.calc_model_metric(

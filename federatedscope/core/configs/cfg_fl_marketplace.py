@@ -28,6 +28,11 @@ def extend_marketplace_cfg(cfg):
     cfg.marketplace.alpha_tune.info_matrix_pth = ''
     cfg.marketplace.alpha_tune.update_hp = True
 
+    cfg.marketplace.alpha_tune.aggregation_weight_sha_use = False
+    cfg.marketplace.alpha_tune.aggregation_weight_candidates = []
+    cfg.marketplace.alpha_tune.aggregation_weight_sha_round = 5
+    cfg.marketplace.alpha_tune.aggregation_weight_sha_metric = 'acc'
+
     # --------------- register corresponding check function ----------
     cfg.register_cfg_check_fun(assert_marketplace_cfg)
 

@@ -52,6 +52,9 @@ def get_client_cls(cfg):
                 AlphaFedExClient
             return AlphaFedExClient
 
+        else:
+            raise ValueError('Other hpo methods for marketplace are not implemented yet!')
+
     if cfg.hpo.fedex.use:
         from federatedscope.autotune.fedex import FedExClient
         return FedExClient
@@ -151,9 +154,14 @@ def get_server_cls(cfg):
 
     if cfg.marketplace.alpha_tune_use:
         if cfg.marketplace.alpha_tune.hpo.lower() == 'fedex':
-            from federatedscope.marketplace.alpha_tunning_FedEx import \
-                AlphaFedExServer
-            return AlphaFedExServer
+            if cfg.marketplace.alpha_tune.aggregation_weight_sha_use:
+                from federatedscope.marketplace.alpha_tunning_FedEx import \
+                    AlphaFedExShaServer
+                return AlphaFedExShaServer
+            else:
+                from federatedscope.marketplace.alpha_tunning_FedEx import \
+                    AlphaFedExServer
+                return AlphaFedExServer
 
     if cfg.hpo.fedex.use:
         from federatedscope.autotune.fedex import FedExServer

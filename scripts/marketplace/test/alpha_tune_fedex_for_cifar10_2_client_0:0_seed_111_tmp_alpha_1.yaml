@@ -11,7 +11,7 @@ data:
   - 0.2
   splitter: lda
   splitter_args:
-  - alpha: 0.2
+  - alpha: 10
   subsample: 0.2
   transform:
   - - ToTensor
@@ -36,6 +36,8 @@ eval:
   metrics:
   - acc
   - correct
+  - classification_report
+  - confusion_matrix
 federate:
   client_num: 2
   merge_test_data: false

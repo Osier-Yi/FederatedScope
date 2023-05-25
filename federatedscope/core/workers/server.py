@@ -582,9 +582,15 @@ class Server(BaseServer):
                 for client_eval_results in eval_res_set:
                     for key in client_eval_results.keys():
                         if key not in metrics_all_clients:
-                            metrics_all_clients[key] = list()
-                        metrics_all_clients[key].append(
-                            float(client_eval_results[key]))
+                            try:
+                                metrics_all_clients[key] = list()
+                                metrics_all_clients[key].append(
+                                    float(client_eval_results[key]))
+                            except:
+                                metrics_all_clients.pop(key)
+                                logger.info('Skip: {}'.format(key))
+
+
                 formatted_logs = self._monitor.format_eval_res(
                     metrics_all_clients,
                     rnd=round,

@@ -5,12 +5,15 @@ import logging
 logger = logging.getLogger(__name__)
 
 class AlphaTuneAggretor(ClientsAvgAggregator):
-    def __init__(self, model=None, device='cpu', config=None):
+    def __init__(self, model=None, device='cpu', config=None, train_weight=None):
         super(ClientsAvgAggregator, self).__init__()
         self.model = model
         self.device = device
         self.cfg = config
-        self.weight = self.cfg.marketplace.alpha_tune.train_weight
+        if train_weight is not None:
+            self.weight = train_weight
+        else:
+            self.weight = self.cfg.marketplace.alpha_tune.train_weight
 
     def update_train_weight(self):
         # TODO update the weight

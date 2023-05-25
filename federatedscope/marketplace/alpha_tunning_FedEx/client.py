@@ -74,6 +74,7 @@ class AlphaFedExClient(FedExClient):
             self.trainer.finetune()
         metrics = {}
         for split in self._cfg.eval.split:
+            print('evaluating ----- Client #{} Model #{}, round: {}, split:{}'.format(self.state, self.ID, model_id, split))
             eval_metrics = self.trainer.evaluate(target_data_split_name=split)
 
             for key in eval_metrics:
