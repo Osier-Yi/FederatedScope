@@ -11,7 +11,7 @@ data:
   - 0.2
   splitter: lda
   splitter_args:
-  - alpha: 10
+  - alpha: 0.2
   subsample: 0.2
   transform:
   - - ToTensor
@@ -47,7 +47,7 @@ federate:
   sampler: uniform
   save_to: Alpha_tune_ls_FedAvg_cifar10_fedex_2_clients_0_10_consistent_label.pth
   share_local_model: false
-  total_round_num: 210
+  total_round_num: 205
   use_diff: true
 grad:
   grad_clip: 5.0
@@ -57,38 +57,58 @@ hpo:
     eta0: -1.0
     gamma: 0.0
     sched: aggressive
-    ss: scripts/marketplace/example_scripts/cifar10/avg/fedex_grid_search_space_no_search.yaml
+    ss: scripts/marketplace/example_scripts/cifar10/avg/fedex_grid_search_space_large_v1.yaml
     use: false
   metric: client_summarized_weighted_avg.val_avg_loss
   working_folder: fedex_cifar10_avg_0_10_consistent_label
 marketplace:
   alpha_tune:
+    aggregation_weight_candidates:
+    - - 0.9
+      - 0.1
+    - - 0.8
+      - 0.2
+    - - 0.3
+      - 0.7
+    - - 0.6
+      - 0.4
+    - - 0.4
+      - 0.6
+    - - 0.5
+      - 0.5
+    - - 0.2
+      - 0.8
+    - - 0.7
+      - 0.3
+    - - 0.1
+      - 0.9
+    - - 0.0
+      - 1.0
+    - - 1.0
+      - 0.0
+    aggregation_weight_sha_metric: f1
+    aggregation_weight_sha_round: 5
+    aggregation_weight_sha_use: true
     client_bid:
     - 0
-    - 0
+    - 5
     entropy_determined: false
+    info_matrix_pth: info_matrix/2_clients_222_inf_matrix.pickle
     tau_alpha: 1
-    info_matrix_pth: info_matrix/2_clients_111_inf_matrix.pickle
-    aggregation_weight_sha_use: True
-    aggregation_weight_candidates: [[0.1, 0.9], [0.4,0.6], [0.8, 0.2], [0.5, 0.5]]
-    aggregation_weight_sha_round: 2
-    aggregation_weight_sha_metric: 'f1'
   alpha_tune_use: true
 model:
   hidden: 512
   model_num_per_trainer: 4
   out_channels: 10
   type: convnet2
-outdir: exp_consistent_dev_test/exp_ls_epoch_alpha_tune_2_client_0:0_seed_111_tmp_alpha_1
-seed: 111
+outdir: exp_v1_order_bug_agg_weight_sha/exp_ls_epoch_alpha_tune_2_client_0:5_seed_222_tmp_alpha_1
+seed: 222
 train:
-  batch_or_epoch: batch
+  batch_or_epoch: epoch
   local_update_steps: 2
   optimizer:
     lr: 0.5
     weight_decay: 0.0
-#  scheduler:
-#    type: myscheduler
 trainer:
   type: cvtrainer
 use_gpu: true
