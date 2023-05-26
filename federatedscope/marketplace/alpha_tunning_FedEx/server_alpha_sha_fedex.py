@@ -820,7 +820,7 @@ class AlphaFedExShaServer(FedExServer):
                     self.model_training_active_status[model_idx] = False
 
                 logger.info('Round: {}, '
-                            'updating the model_training_active_status to: {}'.format(self.model_training_active_status))
+                            'updating the model_training_active_status to: {}'.format(self.state, self.model_training_active_status))
 
                 logger.info('Round: {}, selected models: {}, deactivate models: {}'.format(self.state, sel_model_idx, deactivate_model_idx))
                 logger.info('Round: {}, '
