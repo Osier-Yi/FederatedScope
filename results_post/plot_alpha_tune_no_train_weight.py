@@ -17,8 +17,8 @@ matplotlib.rc('font', **font)
 MAX2RUN = 50
 # client_weight_plot = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
 
-client_weight_plot = [0.0, 0.1, 0.3, 0.5, 0.7,0.9,1]
-COLORS = ['cyan', 'red', 'peru',  'blue', 'orange','green',  'navy', 'brown',  'purple',  'black', 'tan' ]
+client_weight_plot = [0.1, 0.3, 0.5, 0.7,0.9]
+COLORS = ['cyan', 'red', 'tan',  'blue', 'orange','green',  'navy', 'brown',  'purple',  'black', 'peru' ]
 
 
 
@@ -92,17 +92,14 @@ def plot(acc_all_dict, plot_key_list, plot_sav_dir, min_rep=5):
                     plt.ylim([0.5, 0.9])
                 else:
                     if plot_key.split('_')[-1] == 'f1':
-                        plt.ylim([0.1, 0.9])
+                        plt.ylim([0.1, 0.6])
                     elif plot_key.split('_')[-1] == 'auc':
-                        plt.ylim([0.1, 1.0])
-                    elif plot_key.split('_')[-1] == 'acc':
-                        plt.ylim([0.1, 0.9])
+                        plt.ylim([0.6, 0.99])
                     else:
-                        plt.ylim([0.0, 0.9])
+                        plt.ylim([0.4, 0.9])
                 plt.tight_layout()
                 plt.savefig(
                     os.path.join(plot_sav_dir, rep + '_' + plot_key + '.pdf'))
-                print('saving to: {}'.format(os.path.join(plot_sav_dir, rep + '_' + plot_key + '.pdf')))
                 plt.close()
             else:
                 if rep not in re_run_file:
@@ -131,7 +128,6 @@ def collect_csv(root_dir):
             continue
         file_info = split_dir_name(file_name, prefix='')
         tmp_df = pd.read_csv(os.path.join(root_dir, file_name))
-
         tmp_key = ''
         if file_info['train_weight'] is not None:
             tmp_key = 'train_weight_' + ':'.join(
@@ -145,8 +141,6 @@ def collect_csv(root_dir):
             print('**** handling alpha csv')
             tmp_dict = alpha_all_dict
         elif file_name.split('_')[-3] == 'test':
-            if 'model' in tmp_df.keys():
-                pass
             tmp_dict = acc_all_dict
         else:
             print('**** skipping: {}'.format(file_name))
@@ -303,13 +297,11 @@ def plot_clientwise_diff_train_weight(acc_all_dict, plot_key_list, plot_sav_dir,
                 # plt.title(plot_key)
                 plt.grid()
                 if plot_key.split('_')[-1] == 'f1':
-                    plt.ylim([0.1, 0.9])
+                    plt.ylim([0.1, 0.6])
                 elif plot_key.split('_')[-1] == 'auc':
-                    plt.ylim([0.1, 1.0])
-                elif plot_key.split('_')[-1] == 'acc':
-                    plt.ylim([0.1, 0.9])
+                    plt.ylim([0.8, 1.0])
                 else:
-                    plt.ylim([0.0, 0.9])
+                    plt.ylim([0.4, 0.9])
 
                 # plt.ylim([0.3, 0.9])
 
@@ -333,24 +325,25 @@ if __name__ == '__main__':
     # root_dir = 'results_rep_batch_sche_multistep_lr_label_splitter'
     # plot_sav_dir = 'results_rep_batch_sche_multistep_lr_label_splitter_plot'
 
-    # root_dir = 'results_rep_epoch_sche_multistep_lr_label_splitter'
-    # plot_sav_dir = 'results_rep_epoch_sche_multistep_lr_label_splitter_plot'
-    #
-    # root_dir = 'results_rep_epoch_sche_multistep_lr_label_splitter_more_metric'
-    # plot_sav_dir = 'results_rep_epoch_sche_multistep_lr_label_splitter_plot_more_metric'
+    root_dir = 'results_rep_epoch_sche_multistep_lr_label_splitter'
+    plot_sav_dir = 'results_rep_epoch_sche_multistep_lr_label_splitter_plot'
+
+    root_dir = 'results_rep_epoch_sche_multistep_lr_label_splitter_more_metric'
+    plot_sav_dir = 'results_rep_epoch_sche_multistep_lr_label_splitter_plot_more_metric'
 
     root_dir = 'results_no_search_epoch_sche_multistep_lr_label_splitter_more_metric_v1_order_bug'
     plot_sav_dir = 'results_no_search_epoch_sche_multistep_lr_label_splitter_more_metric_v1_order_bug_plot'
 
     plot_key_list = ['test_acc', 'val_acc', 'test_f1', 'val_f1', 'test_roc_auc', 'val_roc_auc']
-    #
-    # root_dir = 'results_v1_order_bug'
-    # plot_sav_dir = 'results_v1_order_bug_plot'
-    # plot_key_list = ['test_acc', 'val_acc']
+
+    root_dir = 'results_v1_order_bug'
+    plot_sav_dir = 'results_v1_order_bug_plot'
+    plot_key_list = ['test_acc', 'val_acc']
 
 
     check_dir(plot_sav_dir)
     acc_all_dict, alpha_all_dict = collect_csv(root_dir)
-    plot(acc_all_dict, plot_key_list, plot_sav_dir, min_rep=4)
-    # plot_alpha(alpha_all_dict, plot_sav_dir, min_rep=5)
-    plot_clientwise_diff_train_weight(acc_all_dict, plot_key_list, plot_sav_dir, min_rep=5)
+    plot(acc_all_dict, plot_key_list, plot_sav_dir, min_rep=5)
+    plot_alpha(alpha_all_dict, plot_sav_dir, min_rep=5)
+    # plot_clientwise_diff_train_weight(acc_all_dict, plot_key_list, plot_sav_dir, min_rep=5)
+

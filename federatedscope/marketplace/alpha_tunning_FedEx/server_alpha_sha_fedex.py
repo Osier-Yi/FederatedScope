@@ -347,70 +347,75 @@ class AlphaFedExShaServer(FedExServer):
         #
         # for i in range(self.current_model_idx, self.model_num):
 
-        model_id = self.current_model_idx
+        if msg_type == 'model_para':
+            model_id_set = [self.current_model_idx]
+        elif msg_type == 'evaluate':
+            model_id_set = self._current_activate_sha_models()
+        for model_id in model_id_set:
+            logger.info(" broadcast model {} for {}".format(model_id, msg_type))
+            if filter_unseen_clients:
+                # to filter out the unseen clients when sampling
+                self.sampler.change_state(self.unseen_clients_id, 'unseen')
 
-        logger.info(" broadcast model {}".format(model_id))
-        if filter_unseen_clients:
-            # to filter out the unseen clients when sampling
-            self.sampler.change_state(self.unseen_clients_id, 'unseen')
-
-        if sample_client_num > 0:
-            receiver = self.sampler.sample(size=sample_client_num)
-        else:
-            # broadcast to all clients
-            receiver = list(self.comm_manager.neighbors.keys())
-            if msg_type == 'model_para':
-                self.sampler.change_state(receiver, 'working')
-
-        if self._noise_injector is not None and msg_type == 'model_para':
-            # Inject noise only when broadcast parameters
-            for model_idx_i in range(len(self.models)):
-                num_sample_clients = [
-                    v["num_sample"] for v in self.join_in_info.values()
-                ]
-                self._noise_injector(self._cfg, num_sample_clients,
-                                     self.models[model_idx_i])
-
-        # if self.model_num > 1:
-        #     model_para = [model.state_dict() for model in self.models]
-        # else:
-        #     model_para = self.model.state_dict()
-        model_para = self.models[model_id].state_dict()
-
-        # sample the hyper-parameter config specific to the clients
-        if self._cfg.hpo.fedex.psn:
-            self._policy_net.train()
-            self._pn_optimizer.zero_grad()
-            self._theta = self._policy_net(self._client_encodings)
-        for rcv_idx in receiver:
-            if self._cfg.hpo.fedex.psn:
-                cfg_idx, sampled_cfg = self.sample([
-                    theta[model_id][rcv_idx - 1].detach().cpu().numpy()
-                    for theta in self._theta[self.unseen_clients_id]
-                ],
-                                                   model_id=model_id)
+            if sample_client_num > 0:
+                receiver = self.sampler.sample(size=sample_client_num)
             else:
-                cfg_idx, sampled_cfg = self.sample(self._theta[model_id],
-                                                   model_id=model_id)
-            content = {
-                'model_param': model_para,
-                "arms": cfg_idx,
-                'hyperparam': sampled_cfg,
-                'model_id': model_id
-            }
-            self.comm_manager.send(
-                Message(msg_type=msg_type,
-                        sender=self.ID,
-                        receiver=[rcv_idx],
-                        state=self.state,
-                        content=content))
-        if self._cfg.federate.online_aggr:
-            for idx in range(self.model_num):
-                self.aggregators[idx].reset()
+                # broadcast to all clients
+                receiver = list(self.comm_manager.neighbors.keys())
+                if msg_type == 'model_para':
+                    self.sampler.change_state(receiver, 'working')
 
-        if filter_unseen_clients:
-            # restore the state of the unseen clients within sampler
-            self.sampler.change_state(self.unseen_clients_id, 'seen')
+            if self._noise_injector is not None and msg_type == 'model_para':
+                # Inject noise only when broadcast parameters
+                for model_idx_i in range(len(self.models)):
+                    num_sample_clients = [
+                        v["num_sample"] for v in self.join_in_info.values()
+                    ]
+                    self._noise_injector(self._cfg, num_sample_clients,
+                                         self.models[model_idx_i])
+
+            # if self.model_num > 1:
+            #     model_para = [model.state_dict() for model in self.models]
+            # else:
+            #     model_para = self.model.state_dict()
+            model_para = self.models[model_id].state_dict()
+
+            # sample the hyper-parameter config specific to the clients
+            if self._cfg.hpo.fedex.psn:
+                self._policy_net.train()
+                self._pn_optimizer.zero_grad()
+                self._theta = self._policy_net(self._client_encodings)
+            for rcv_idx in receiver:
+                if self._cfg.hpo.fedex.psn:
+                    cfg_idx, sampled_cfg = self.sample([
+                        theta[model_id][rcv_idx - 1].detach().cpu().numpy()
+                        for theta in self._theta[self.unseen_clients_id]
+                    ],
+                        model_id=model_id)
+                else:
+                    cfg_idx, sampled_cfg = self.sample(self._theta[model_id],
+                                                       model_id=model_id)
+                content = {
+                    'model_param': model_para,
+                    "arms": cfg_idx,
+                    'hyperparam': sampled_cfg,
+                    'model_id': model_id
+                }
+                self.comm_manager.send(
+                    Message(msg_type=msg_type,
+                            sender=self.ID,
+                            receiver=[rcv_idx],
+                            state=self.state,
+                            content=content))
+            if self._cfg.federate.online_aggr:
+                for idx in range(self.model_num):
+                    self.aggregators[idx].reset()
+
+            if filter_unseen_clients:
+                # restore the state of the unseen clients within sampler
+                self.sampler.change_state(self.unseen_clients_id, 'seen')
+
+
 
     def callback_funcs_model_para(self, message: Message):
         round, sender, content = message.state, message.sender, message.content
@@ -838,12 +843,30 @@ class AlphaFedExShaServer(FedExServer):
 
         cur_training_weight = self.aggregation_weight_candidates[self.current_model_idx-self.client_num-1]
 
+        # logger.info('current model: {},  training weight: {}'.format(cur_training_weight))
+        tmp_cur_val = []
+        for client_id in range(len(mab_feedbacks)):
+            # assert client_id == mab_feedbacks[client_id]['client_id']
+            tmp_cur_val.append(mab_feedbacks[client_id]['val_{}'.format(self.aggregation_weight_sha_metric)])
+        logger.info('current model: {}, training weight: {}, val f1: {}'.format(self.current_model_idx,
+                                                                                cur_training_weight,
+                                                                                tmp_cur_val))
+
         tmp_f1 = 0
         # current_agg_weight = self.aggregation_weight_candidates
+        try:
+            alpha_weight = self.alpha_info[self.state].flatten()
+            logger.info("Round: {}, current alpha: {}".format(self.state,
+                                                              alpha_weight))
+        except:
+            alpha_weight = np.ones(self.client_num)* (1.0/self.client_num)
+            logger.info('Round: {}, no alpha provided! Replace alpha as: {'
+                        '}'.format(self.state, alpha_weight))
+
 
         for client_id in range(len(mab_feedbacks)):
             # assert client_id == mab_feedbacks[client_id]['client_id']
-            tmp_f1 += cur_training_weight[client_id] * mab_feedbacks[client_id]['val_{}'.format(self.aggregation_weight_sha_metric)]
+            tmp_f1 += alpha_weight[client_id] * mab_feedbacks[client_id]['val_{}'.format(self.aggregation_weight_sha_metric)]
 
         self.val_sha[self.state][self.current_model_idx] = tmp_f1
         logger.info('Current sha_val: {}'.format(self.val_sha[self.state]))
