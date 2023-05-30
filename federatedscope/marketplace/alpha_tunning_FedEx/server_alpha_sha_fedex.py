@@ -854,6 +854,7 @@ class AlphaFedExShaServer(FedExServer):
 
         tmp_f1 = 0
         # current_agg_weight = self.aggregation_weight_candidates
+        logger.info('Round: {}, current alpha_info{}'.format(self.state, self.alpha_info))
         try:
             alpha_weight = self.alpha_info[self.state].flatten()
             logger.info("Round: {}, current alpha: {}".format(self.state,
