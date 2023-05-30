@@ -447,13 +447,13 @@ class ResultsPlot():
                         plt.ylim([0.1, 0.9])
                     else:
                         if plot_key.split('_')[-1] == 'f1':
-                            plt.ylim([0.1, 0.9])
+                            plt.ylim([0.0, 1.0])
                         elif plot_key.split('_')[-1] == 'auc':
-                            plt.ylim([0.1, 1.0])
+                            plt.ylim([0.0, 1.0])
                         elif plot_key.split('_')[-1] == 'acc':
-                            plt.ylim([0.1, 0.9])
+                            plt.ylim([0.0, 1.0])
                         else:
-                            plt.ylim([0.0, 0.9])
+                            plt.ylim([0.0, 1.0])
                     plt.tight_layout()
                     plt.savefig(
                         os.path.join(plot_sav_dir, rep + '_' + plot_key + '.pdf'))
@@ -498,8 +498,14 @@ if __name__ == '__main__':
     # plot_sav_dir = 'results_v1_order_bug_plot'
     # plot_key_list = ['test_acc', 'val_acc']
 
-    root_dir = 'results_sha/results_v1_order_bug_agg_weight_sha_cat_splitterr'
-    plot_sav_dir = 'results_sha/results_exp_v1_order_bug_agg_weight_sha_cat_splitter_plot'
+    root_dir = 'results_sha/results_exp_v1_order_bug_agg_weight_sha_cat_splitter_no_search'
+    plot_sav_dir = 'results_sha/results_exp_v1_order_bug_agg_weight_sha_cat_splitter_no_search_plot'
+
+    # root_dir = 'results_sha/results_exp_v1_order_bug_agg_weight_sha_cat_splitter/'
+    # plot_sav_dir = 'results_sha/results_exp_v1_order_bug_agg_weight_sha_cat_splitter_plot/'
+
+    # root_dir = 'results_sha/results_exp_v1_order_bug_agg_weight_sha_lda_splitter/'
+    # plot_sav_dir = 'results_sha/results_exp_v1_order_bug_agg_weight_sha_lda_splitter_plot/'
 
     plot_key_list = ['test_acc', 'val_acc', 'test_f1', 'val_f1']
 
