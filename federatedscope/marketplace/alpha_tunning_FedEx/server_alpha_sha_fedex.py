@@ -451,7 +451,7 @@ class AlphaFedExShaServer(FedExServer):
             [elem['val_avg_loss_before'] for elem in feedbacks])
         after = np.asarray([elem['val_avg_loss_after'] for elem in feedbacks])
 
-        if self.state != 0 and model_idx in range(self.client_num + 2, len(self.models)):
+        if self.state != 0 and model_idx in range(self.client_num + 1, len(self.models)):
             self.update_alpha()
             weight = self.alpha_info[self.state].flatten()
             logger.info('Round: #{}, alpha: {}'.format(self.state, weight))
@@ -858,12 +858,15 @@ class AlphaFedExShaServer(FedExServer):
         logger.info('Round: {}, current alpha_info{}'.format(self.state, self.alpha_info))
         try:
             alpha_weight = self.alpha_info[self.state].flatten()
-            logger.info("Round: {}, current alpha: {}".format(self.state,
+            logger.info("Round: {}, alpha available! Alpha: {}".format(self.state,
                                                               alpha_weight))
         except:
             alpha_weight = np.ones(self.client_num)* (1.0/self.client_num)
             logger.info('Round: {}, no alpha provided! Replace alpha as: {'
                         '}'.format(self.state, alpha_weight))
+        logger.info('Round: {}, current alpha in sha_val calculation is: {'
+                    '}'.format(self.state, alpha_weight))
+
 
 
         for client_id in range(len(mab_feedbacks)):
