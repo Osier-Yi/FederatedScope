@@ -57,7 +57,7 @@ hpo:
     eta0: -1.0
     gamma: 0.0
     sched: aggressive
-    ss: scripts/marketplace/example_scripts/cifar10/avg/fedex_grid_search_space_no_search.yaml
+    ss: scripts/marketplace/example_scripts/cifar10/avg/fedex_grid_search_space_large_v1.yaml
     use: false
   metric: client_summarized_weighted_avg.val_avg_loss
   working_folder: fedex_cifar10_avg_0_10_consistent_label
@@ -101,7 +101,7 @@ model:
   model_num_per_trainer: 4
   out_channels: 10
   type: convnet2
-outdir: exp_v1_order_bug_agg_weight_sha_cat_splitter_no_search/exp_ls_epoch_alpha_tune_2_client_0:5_seed_333_tmp_alpha_1
+outdir: exp_v1_order_bug_agg_weight_sha_cat_splitter/exp_ls_epoch_alpha_tune_2_client_0:5_seed_333_tmp_alpha_1
 seed: 333
 train:
   batch_or_epoch: epoch

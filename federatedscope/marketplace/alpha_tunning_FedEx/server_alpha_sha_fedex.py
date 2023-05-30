@@ -626,7 +626,7 @@ class AlphaFedExShaServer(FedExServer):
                                                 msg_list,
                                                 rnd=self.state)
 
-                self._update_val_sha(mab_feedbacks)
+
 
                 # Aggregate
                 agg_info = {
@@ -673,6 +673,7 @@ class AlphaFedExShaServer(FedExServer):
                 # update the policy
                 self.update_policy(mab_feedbacks,
                                    model_idx=self.current_model_idx)
+                self._update_val_sha(mab_feedbacks)
 
                 # if self.state != 0 and self.state % self.aggregation_weight_sha_round == 0:
                 #     if self.has_info_matrix:

@@ -30,9 +30,9 @@ if __name__ == '__main__':
     #                 [50, 20, 10], [1000, 20, 10], [100, 20, 10]]
     client_bid_2 = [[0, 0], [0, 5], [0, 10], [5, 0],
                     [10, 0], [100,0], [0,100]]
-    # client_bid_3 = [[0, 0, 0], [10, 20, 50], [10, 20, 1000], [10, 20, 100],
-    #                 [50, 20, 10], [1000, 20, 10], [100, 20, 10]]
-    client_bid_3 = []
+    client_bid_3 = [[0, 0, 0], [10, 20, 50], [10, 20, 1000], [10, 20, 100],
+                    [50, 20, 10], [1000, 20, 10], [100, 20, 10], [20,50,10], [20,100,10], [20,1000,10]]
+    # client_bid_3 = []
     # entropy_determined = [True, False]
     entropy_determined = [False]
     # train_weight_2 = [[0.8,0.2], [0.6,0.4], [0.4, 0.6], [0.2, 0.8], [0.5,0.5]]
@@ -48,23 +48,23 @@ if __name__ == '__main__':
     aggregation_weight_sha_metric = 'f1'
     eval_matrics = ['acc', 'correct', 'f1', 'classification_report', 'confusion_matrix']
     tau_alpha = [1]
-    outdir_root = 'exp_v1_order_bug_agg_weight_sha_cat_splitter_no_search'
+    outdir_root = 'exp_v1_order_bug_agg_weight_sha_lda_splitter'
     our_dir_name_prefix = 'exp_ls_epoch_alpha_tune_'
     yaml_file_name_prefix = 'alpha_tune_fedex_for_cifar10_'
-    yaml_root_prefix = 'scripts/marketplace/example_scripts/ls_run_scripts_exp_v1_order_bug_agg_weight_sha_cat_splitter_no_search/'
+    yaml_root_prefix = 'scripts/marketplace/example_scripts/ls_run_scripts_exp_v1_order_bug_agg_weight_sha_lda_splitter/'
     check_dir(yaml_root_prefix)
     yaml_root = os.path.join(yaml_root_prefix, 'two_clients')
     check_dir(yaml_root)
 
     add_eval_metric = True
     # metric_list = ['acc', 'correct']
-    change_ss = True
-    ss_pth = 'scripts/marketplace/example_scripts/cifar10/avg/fedex_grid_search_space_no_search.yaml'
+    change_ss = False
+    # ss_pth = 'scripts/marketplace/example_scripts/cifar10/avg/fedex_grid_search_space_no_search.yaml'
 
-    sh_pth = 'scripts/marketplace/rep_sh_v1_order_bug_agg_weight_sha_cat_splitter_no_search'
-    change_splitter = True
-    splitter_name = 'alpha_tune_cifar10_splitter'
-    splitter_args_alpha = 0.01
+    sh_pth = 'scripts/marketplace/rep_sh_v1_order_bug_agg_weight_sha_lda_splitter'
+    change_splitter = False
+    # splitter_name = 'alpha_tune_cifar10_splitter'
+    # splitter_args_alpha = 0.01
 
 
     inf_matrix_pth_prefix = 'info_matrix/{}_clients_{}_inf_matrix.pickle'
@@ -234,7 +234,7 @@ if __name__ == '__main__':
 
 
     available_gpu = [0, 1, 2, 3, 4, 5, 6, 7]
-    per_gpu_running = 5
+    per_gpu_running = 8
     print(len(yaml_file_pth_list_three_clients))
     print(len(yaml_file_pth_list_two_clients))
     print(len(top_run_set))
