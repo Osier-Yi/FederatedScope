@@ -168,13 +168,13 @@ def collect_alpha_tune_result(file_pth,
 
     train_valid_metric = pd.DataFrame(train_valid_metric)
     test_valid_metric = pd.DataFrame(test_valid_metric)
-    print(test_valid_metric)
-    # train_valid_metric.to_csv(os.path.join(
-    #     plot_sav_dir, file_sav_prefix + '_' + 'train_valid_metric.csv'),
-    #                           index=False)
-    # test_valid_metric.to_csv(os.path.join(
-    #     plot_sav_dir, file_sav_prefix + '_' + 'test_valid_metric.csv'),
-    #                          index=False)
+    # print(test_valid_metric)
+    train_valid_metric.to_csv(os.path.join(
+        plot_sav_dir, file_sav_prefix + '_' + 'train_valid_metric.csv'),
+                              index=False)
+    test_valid_metric.to_csv(os.path.join(
+        plot_sav_dir, file_sav_prefix + '_' + 'test_valid_metric.csv'),
+                             index=False)
 
 
 def collect_alpha(alpha_pth, num_client, plot_sav_dir, file_sav_prefix=None):
@@ -351,14 +351,17 @@ if __name__ == '__main__':
         'val_avg_loss_before': [],
         'val_avg_loss_after': [],
         # 'train_roc_auc': [],
-        'train_f1': []
+        'train_f1': [],
+        'val_f1':[]
     }
 
     train_valid_metric_name = [
         'train_acc', 'train_avg_loss', 'val_avg_loss_before',
         'val_avg_loss_after',
         # 'train_roc_auc',
-        'train_f1'
+        'train_f1',
+        'val_f1'
+
     ]
     test_valid_metric_name = [
         'test_acc', 'test_avg_loss', 'val_acc', 'val_avg_loss',
