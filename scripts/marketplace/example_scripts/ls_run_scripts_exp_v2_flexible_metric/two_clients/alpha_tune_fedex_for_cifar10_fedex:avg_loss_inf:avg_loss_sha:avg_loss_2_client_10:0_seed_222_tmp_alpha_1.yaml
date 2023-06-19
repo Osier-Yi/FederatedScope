@@ -1,0 +1,132 @@
+criterion:
+  type: CrossEntropyLoss
+data:
+  args:
+  - download: true
+  consistent_label_distribution: true
+  root: data/
+  splits:
+  - 0.8
+  - 0.2
+  - 0.2
+  splitter: alpha_tune_cifar10_splitter
+  splitter_args:
+  - alpha: 0.05
+    label_class_category:
+      0:
+      - 0
+      - 1
+      - 8
+      - 9
+      1:
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+  subsample: 0.2
+  transform:
+  - - ToTensor
+  - - Normalize
+    - mean:
+      - 0.4914
+      - 0.4822
+      - 0.4465
+      std:
+      - 0.247
+      - 0.2435
+      - 0.2616
+  type: CIFAR10@torchvision
+dataloader:
+  batch_size: 32
+device: 0
+early_stop:
+  patience: 0
+eval:
+  best_res_update_round_wise_key: test_acc
+  freq: 5
+  metrics:
+  - acc
+  - correct
+  - f1
+  - classification_report
+  - confusion_matrix
+  - avg_loss
+federate:
+  client_num: 2
+  merge_test_data: false
+  mode: standalone
+  sample_client_num: 2
+  sampler: uniform
+  save_to: Alpha_tune_ls_FedAvg_cifar10_fedex_2_clients_0_10_consistent_label.pth
+  share_local_model: false
+  total_round_num: 205
+  use_diff: true
+grad:
+  grad_clip: 5.0
+hpo:
+  fedex:
+    cutoff: 0.001
+    diff: false
+    eta0: -1.0
+    gamma: 0.0
+    sched: aggressive
+    ss: scripts/marketplace/example_scripts/cifar10/avg/fedex_grid_search_space_large_v1.yaml
+    use: false
+  metric: client_summarized_weighted_avg.val_avg_loss
+  working_folder: fedex_cifar10_avg_0_10_consistent_label
+marketplace:
+  alpha_tune:
+    aggregation_weight_candidates:
+    - - 0.9
+      - 0.1
+    - - 0.8
+      - 0.2
+    - - 0.3
+      - 0.7
+    - - 0.6
+      - 0.4
+    - - 0.4
+      - 0.6
+    - - 0.5
+      - 0.5
+    - - 0.2
+      - 0.8
+    - - 0.7
+      - 0.3
+    - - 0.1
+      - 0.9
+    - - 0.0
+      - 1.0
+    - - 1.0
+      - 0.0
+    aggregation_weight_sha_metric: avg_loss
+    aggregation_weight_sha_round: 10
+    aggregation_weight_sha_use: true
+    client_bid:
+    - 10
+    - 0
+    entropy_determined: false
+    fedex_metric: avg_loss
+    inf_matrix_metric: avg_loss
+    info_matrix_pth: info_matrix/2_clients_222_inf_matrix_cat.pickle
+    is_normalize_alpha: false
+    tau_alpha: 1
+  alpha_tune_use: true
+model:
+  hidden: 512
+  model_num_per_trainer: 4
+  out_channels: 10
+  type: convnet2
+outdir: exp_v2_flexible_metric_fedex:avg_loss_inf:avg_loss_sha:avg_loss/exp_ls_epoch_alpha_tune_2_client_10:0_seed_222_tmp_alpha_1
+seed: 222
+train:
+  batch_or_epoch: epoch
+  local_update_steps: 2
+  optimizer:
+    lr: 0.5
+    weight_decay: 0.0
+trainer:
+  type: cvtrainer
+use_gpu: true

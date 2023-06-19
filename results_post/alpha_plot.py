@@ -31,6 +31,9 @@ train_weight_2_candidate =[[0.9, 0.1], [0.8, 0.2], [0.3, 0.7], [0.6,0.4], [0.4, 
 train_weight_3_candidate=[[0.7, 0.1, 0.2], [0.3,0.3,0.4], [0.1, 0.2, 0.7],
                               [0.1,0.7, 0.2], [0.5, 0.3, 0.2], [0.2,0.5,0.3],
                               [0.2, 0.3,0.5]]
+train_weight_3_candidate = [[0.7, 0.1, 0.2], [0.3, 0.3, 0.4], [0.1, 0.2, 0.7],
+                                [0.1, 0.7, 0.2], [0.5, 0.3, 0.2], [0.2, 0.5, 0.3],
+                                [0.2, 0.3, 0.5], [0.8, 0.1,0.1], [0.1,0.8,0.1], [0.1,0.1,0.8], [0.5,0.4,0.1]]
 
 
 
@@ -203,13 +206,13 @@ class ResultsPlot():
             plt.legend()
             plt.xlabel('Round')
             plt.ylabel('Alpha')
-            # plt.title(plot_key)
+            plt.title(rep.split('_')[0])
             plt.grid()
             # if client_num == 3:
             #     plt.ylim([0.5, 0.9])
             # else:
             #     plt.ylim([0.2,0.95])
-            plt.ylim([0, 1])
+            plt.ylim([0, 2])
             plt.tight_layout()
             print('Saving to ---------- {}'.format(os.path.join(plot_sav_dir, rep + '_' + 'alpha' + '.pdf')))
             plt.savefig(os.path.join(plot_sav_dir, rep + '_' + 'alpha' + '.pdf'))
@@ -475,7 +478,12 @@ class ResultsPlot():
 
         print("rerun: ")
         print(re_run_file)
-        print(model_sel_info)
+        client_print= []
+        model_sel_info = pd.DataFrame(model_sel_info)
+        for item in model_sel_info.columns:
+            if len(item.split(':'))==3:
+                client_print.append(item)
+        print(model_sel_info[client_print])
         print(pd.DataFrame(model_sel_info))
         return re_run_file
 
@@ -498,11 +506,31 @@ if __name__ == '__main__':
     # plot_sav_dir = 'results_v1_order_bug_plot'
     # plot_key_list = ['test_acc', 'val_acc']
 
-    root_dir = 'results_sha/results_exp_v1_order_bug_agg_weight_sha_cat_splitter_no_search'
-    plot_sav_dir = 'results_sha/results_exp_v1_order_bug_agg_weight_sha_cat_splitter_no_search_plot'
+    # root_dir = 'results_sha/results_exp_v1_order_bug_agg_weight_sha_cat_splitter_no_search'
+    # plot_sav_dir = 'results_sha/results_exp_v1_order_bug_agg_weight_sha_cat_splitter_no_search_plot'
 
     # root_dir = 'results_sha/results_exp_v1_order_bug_agg_weight_sha_cat_splitter/'
     # plot_sav_dir = 'results_sha/results_exp_v1_order_bug_agg_weight_sha_cat_splitter_plot/'
+
+    # root_dir = 'results_sha/results_exp_v1_order_bug_agg_weight_sha_cat_splitter_sha_10/'
+    # plot_sav_dir = 'results_sha/results_exp_v1_order_bug_agg_weight_sha_cat_splitter_sha_10_plot/'
+
+    # root_dir = 'results_sha/results_exp_v1_order_bug_agg_weight_sha_lda_splitter_sha_10/'
+    # plot_sav_dir = 'results_sha/results_exp_v1_order_bug_agg_weight_sha_lda_splitter_sha_10_plot/'
+    # plot_alpha_sav_dir = 'results_sha/results_exp_v1_order_bug_agg_weight_sha_lda_splitter_sha_10_alpha_plot/'
+
+    root_dir = 'results_sha/results_exp_v1_order_bug_agg_weight_sha_lda_splitter_sha_10_3clients_add'
+    plot_sav_dir = 'results_sha/results_exp_v1_order_bug_agg_weight_sha_lda_splitter_sha_10_3clients_add_plot/'
+    plot_alpha_sav_dir = 'results_sha/results_exp_v1_order_bug_agg_weight_sha_lda_splitter_sha_10_3clients_add_alpha_plot/'
+
+
+    root_dir = 'results_sha/results_exp_v1_order_bug_agg_weight_sha_lda_splitter_sha_10_3clients_alpha_no_norm/'
+    plot_sav_dir = 'results_sha/results_exp_v1_order_bug_agg_weight_sha_lda_splitter_sha_10_3clients_alpha_no_norm_plot/'
+    plot_alpha_sav_dir = 'results_sha/results_exp_v1_order_bug_agg_weight_sha_lda_splitter_sha_10_3clients_alpha_no_norm_alpha_plot/'
+
+    root_dir = 'results_sha/results_exp_v1_order_bug_agg_weight_sha_cat_splitter_sha_10_3clients_alpha_no_norm/'
+    plot_sav_dir = 'results_sha/results_exp_v1_order_bug_agg_weight_sha_cat_splitter_sha_10_3clients_alpha_no_norm_plot/'
+    plot_alpha_sav_dir = 'results_sha/results_exp_v1_order_bug_agg_weight_sha_cat_splitter_sha_10_3clients_alpha_no_norm_alpha_plot/'
 
     # root_dir = 'results_sha/results_exp_v1_order_bug_agg_weight_sha_lda_splitter/'
     # plot_sav_dir = 'results_sha/results_exp_v1_order_bug_agg_weight_sha_lda_splitter_plot/'
@@ -521,4 +549,5 @@ if __name__ == '__main__':
     acc_all_dict, alpha_all_dict = plotter.collect_csv(root_dir)
     # plotter.plot_clientwise_diff_train_weight(acc_all_dict, plot_key_list, plot_sav_dir, min_rep=5)
     plotter.plot_agg_sha_final_model(acc_all_dict, plot_key_list, plot_sav_dir,min_rep)
+    plotter.plot_alpha(alpha_all_dict, plot_alpha_sav_dir,min_rep)
 

@@ -5,18 +5,24 @@ import pickle
 import numpy as np
 from numpy import array
 
-
 import argparse
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--sav_dir', type=str, default='results_summary',
-                    help='mechanisim name')  # second_price | first_price | third_price | pay_by_submit | vcg
-parser.add_argument('--root_dir', type=str, default='exp_consistent_repeat_no_search_batch/',
+parser.add_argument(
+    '--sav_dir', type=str, default='results_summary', help='mechanisim name'
+)  # second_price | first_price | third_price | pay_by_submit | vcg
+parser.add_argument('--root_dir',
+                    type=str,
+                    default='exp_consistent_repeat_no_search_batch/',
                     help='allocation mode')
-parser.add_argument('--prefix_name', type=str, default='exp_ls_epoch_alpha_tune_',
+parser.add_argument('--prefix_name',
+                    type=str,
+                    default='exp_ls_epoch_alpha_tune_',
                     help='dir prefix')
-parser.add_argument('--has_inf_matrix', type=bool, default=True,
+parser.add_argument('--has_inf_matrix',
+                    type=bool,
+                    default=True,
                     help='whether it has the existing inf matrix')
 
 
@@ -24,6 +30,7 @@ def clear_dir(results_dir):
     for key in results_dir.keys():
         results_dir[key] = []
     return results_dir
+
 
 def check_dir(pth):
     if os.path.exists(pth):
@@ -44,7 +51,7 @@ def split_dir_name(dir_name, prefix):
         for i in range(len(tmp_list)):
             if tmp_list[i] == 'alpha':
 
-                alpha_tau = float(tmp_list[i+1])
+                alpha_tau = float(tmp_list[i + 1])
                 break
     elif 'entropy' in tmp_list:
         alpha_tau = np.nan
@@ -55,51 +62,60 @@ def split_dir_name(dir_name, prefix):
         for i in range(len(tmp_list)):
             if tmp_list[i] == 'weight':
 
-                train_weight = [float(item) for item in tmp_list[i+1].split(':')]
+                train_weight = [
+                    float(item) for item in tmp_list[i + 1].split(':')
+                ]
                 break
 
-    return {'client_bid': client_bid, 'seed': seed, 'alpha_tau': alpha_tau, 'train_weight': train_weight}
+    return {
+        'client_bid': client_bid,
+        'seed': seed,
+        'alpha_tau': alpha_tau,
+        'train_weight': train_weight
+    }
 
 
-def collect_alpha_tune_result(file_pth,
-                              client_num,
-                              plot_sav_dir=None,
-                              file_sav_prefix=None,
-                              exit_inf_matrix = False,
-                              test_valid_metric = {
-                                  'round': [],
-                                  'client': [],
-                                  'test_acc': [],
-                                  'test_avg_loss': [],
-                                  'val_acc': [],
-                                  'val_avg_loss': [],
-                                  'val_roc_auc': [],
-                                  'val_f1': [],
-                                  'test_roc_auc': [],
-                                  'test_f1': []},
-                              train_valid_metric = {
-                                  'round': [],
-                                  'client': [],
-                                  'train_acc': [],
-                                  'train_avg_loss': [],
-                                  'val_avg_loss_before': [],
-                                  'val_avg_loss_after': [],
-                                  'train_roc_auc': [],
-                                  'train_f1': []},
-                              train_valid_metric_name = [
-                                  'train_acc', 'train_avg_loss', 'val_avg_loss_before',
-                                  'val_avg_loss_after', 'train_roc_auc', 'train_f1'],
-                              test_valid_metric_name = [
-                                  'test_acc', 'test_avg_loss',
-                                  'val_acc', 'val_avg_loss',
-                                  'val_roc_auc','val_f1',
-                                  'test_roc_auc','test_f1']):
+def collect_alpha_tune_result(
+    file_pth,
+    client_num,
+    plot_sav_dir=None,
+    file_sav_prefix=None,
+    exit_inf_matrix=False,
+    test_valid_metric={
+        'round': [],
+        'client': [],
+        'test_acc': [],
+        'test_avg_loss': [],
+        'val_acc': [],
+        'val_avg_loss': [],
+        'val_roc_auc': [],
+        'val_f1': [],
+        'test_roc_auc': [],
+        'test_f1': []
+    },
+    train_valid_metric={
+        'round': [],
+        'client': [],
+        'train_acc': [],
+        'train_avg_loss': [],
+        'val_avg_loss_before': [],
+        'val_avg_loss_after': [],
+        'train_roc_auc': [],
+        'train_f1': []
+    },
+    train_valid_metric_name=[
+        'train_acc', 'train_avg_loss', 'val_avg_loss_before',
+        'val_avg_loss_after', 'train_roc_auc', 'train_f1'
+    ],
+    test_valid_metric_name=[
+        'test_acc', 'test_avg_loss', 'val_acc', 'val_avg_loss', 'val_roc_auc',
+        'val_f1', 'test_roc_auc', 'test_f1'
+    ]):
     if plot_sav_dir is not None:
         check_dir(plot_sav_dir)
 
     train_valid_metric = clear_dir(train_valid_metric)
     test_valid_metric = clear_dir(test_valid_metric)
-
 
     if file_pth.split('.')[-1] == 'gz':
         open_func = gzip.open
@@ -130,7 +146,8 @@ def collect_alpha_tune_result(file_pth,
                 continue
             if len(results.keys()) == 0:
                 continue
-            if 'Role' in results.keys() and results['Role'].split(' ')[0]=='Client':
+            if 'Role' in results.keys() and results['Role'].split(
+                    ' ')[0] == 'Client':
 
                 client_id = results['Role'].split(' ')[1]
                 # print('--- handle: {}'.format(results) )
@@ -164,7 +181,6 @@ def collect_alpha_tune_result(file_pth,
                         test_valid_metric[key].append(
                             results['Results_raw'][key])
             # if results['Role'][-1] == str(global_model_idx):
-
 
     train_valid_metric = pd.DataFrame(train_valid_metric)
     test_valid_metric = pd.DataFrame(test_valid_metric)
@@ -210,7 +226,8 @@ def collect_dir_wise(root_dir,
                      sav_dir=None,
                      filter_method_list=(),
                      summary=True,
-                     has_inf_matrix=False, **kwargs):
+                     has_inf_matrix=False,
+                     **kwargs):
     check_dir(sav_dir)
     for dir_name in os.listdir(root_dir):
         if len(dir_name) >= len(
@@ -236,9 +253,10 @@ def collect_dir_wise(root_dir,
 
                     for file in os.listdir(file_pth):
 
-                        if 'sub' in file.split('_') and 'exp' in file.split('_'):
+                        if 'sub' in file.split('_') and 'exp' in file.split(
+                                '_'):
                             print('Exist: {}'.format(file))
-                            has_sub_exp=True
+                            has_sub_exp = True
                             pth_add = file
                             break
                     if has_sub_exp:
@@ -256,16 +274,16 @@ def collect_dir_wise(root_dir,
                                 plot_sav_dir = os.path.join(
                                     sav_dir, 'results_' + dir_name)
                             check_dir(plot_sav_dir)
-                            collect_alpha_tune_result(final_pth, client_num,
-                                                      plot_sav_dir,
-                                                      file_sav_prefix,
-                                                      exit_inf_matrix=has_inf_matrix,**kwargs)
+                            collect_alpha_tune_result(
+                                final_pth,
+                                client_num,
+                                plot_sav_dir,
+                                file_sav_prefix,
+                                exit_inf_matrix=has_inf_matrix,
+                                **kwargs)
                             alpha_pth = os.path.join(file_pth, 'alpha.pickle')
                             collect_alpha(alpha_pth, client_num, plot_sav_dir,
                                           file_sav_prefix)
-
-
-
 
 
 if __name__ == '__main__':
@@ -319,8 +337,6 @@ if __name__ == '__main__':
     #                           train_valid_metric_name = train_valid_metric_name,
     #                           test_valid_metric_name = test_valid_metric_name)
 
-
-
     #
     args = parser.parse_args()
     sav_dir = args.sav_dir
@@ -340,7 +356,6 @@ if __name__ == '__main__':
         'val_f1': [],
         # 'test_roc_auc': [],
         'test_f1': []
-
     }
     train_valid_metric = {
         'round': [],
@@ -352,19 +367,23 @@ if __name__ == '__main__':
         'val_avg_loss_after': [],
         # 'train_roc_auc': [],
         'train_f1': [],
-        'val_f1':[]
+        'val_f1': [],
     }
 
     train_valid_metric_name = [
-        'train_acc', 'train_avg_loss', 'val_avg_loss_before',
+        'train_acc',
+        'train_avg_loss',
+        'val_avg_loss_before',
         'val_avg_loss_after',
         # 'train_roc_auc',
         'train_f1',
         'val_f1'
-
     ]
     test_valid_metric_name = [
-        'test_acc', 'test_avg_loss', 'val_acc', 'val_avg_loss',
+        'test_acc',
+        'test_avg_loss',
+        'val_acc',
+        'val_avg_loss',
         # 'val_roc_auc',
         'val_f1',
         # 'test_roc_auc',
@@ -384,6 +403,6 @@ if __name__ == '__main__':
                      has_inf_matrix=has_inf_matrix,
                      summary=True,
                      test_valid_metric=test_valid_metric,
-                     train_valid_metric = train_valid_metric,
-                     train_valid_metric_name = train_valid_metric_name,
-                     test_valid_metric_name = test_valid_metric_name)
+                     train_valid_metric=train_valid_metric,
+                     train_valid_metric_name=train_valid_metric_name,
+                     test_valid_metric_name=test_valid_metric_name)

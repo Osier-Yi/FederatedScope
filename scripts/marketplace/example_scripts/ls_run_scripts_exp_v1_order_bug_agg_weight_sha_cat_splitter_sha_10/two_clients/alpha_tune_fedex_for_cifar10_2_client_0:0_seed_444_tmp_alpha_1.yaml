@@ -53,6 +53,7 @@ grad:
   grad_clip: 5.0
 hpo:
   fedex:
+    cutoff: 0.001
     diff: false
     eta0: -1.0
     gamma: 0.0

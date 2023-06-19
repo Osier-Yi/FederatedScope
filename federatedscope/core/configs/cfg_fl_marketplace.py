@@ -31,7 +31,11 @@ def extend_marketplace_cfg(cfg):
     cfg.marketplace.alpha_tune.aggregation_weight_sha_use = False
     cfg.marketplace.alpha_tune.aggregation_weight_candidates = []
     cfg.marketplace.alpha_tune.aggregation_weight_sha_round = 5
-    cfg.marketplace.alpha_tune.aggregation_weight_sha_metric = 'acc'
+    cfg.marketplace.alpha_tune.aggregation_weight_sha_metric = 'acc' # 'acc', 'f1', 'avg_loss'
+    cfg.marketplace.alpha_tune.is_normalize_alpha = True
+    cfg.marketplace.alpha_tune.fedex_metric = 'avg_loss' #'acc', 'f1', 'avg_loss'
+    cfg.marketplace.alpha_tune.inf_matrix_metric = 'avg_loss' # 'acc', 'f1', 'avg_loss'
+
 
     # --------------- register corresponding check function ----------
     cfg.register_cfg_check_fun(assert_marketplace_cfg)

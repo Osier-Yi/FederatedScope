@@ -43,6 +43,7 @@ def get_splitter(config):
         kwargs = config.data.splitter_args[0]
     else:
         kwargs = {}
+    print(kwargs)
 
     for func in register.splitter_dict.values():
         splitter = func(config.data.splitter, client_num, **kwargs)

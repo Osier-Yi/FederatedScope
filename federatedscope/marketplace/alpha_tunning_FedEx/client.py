@@ -25,6 +25,7 @@ class AlphaFedExClient(FedExClient):
             'Hyperparams': hyperparams,
             'Model_id': model_id
         }
+        logger.info('attemp: {}'.format(attempt))
         logger.info(json.dumps(attempt))
 
         if self._cfg.marketplace.alpha_tune.update_hp:
@@ -74,7 +75,7 @@ class AlphaFedExClient(FedExClient):
             self.trainer.finetune()
         metrics = {}
         for split in self._cfg.eval.split:
-            print('evaluating ----- Client #{} Model #{}, round: {}, split:{}'.format(self.state, self.ID, model_id, split))
+            logger.info('evaluating ----- Client #{} Model #{}, round: {}, split:{}'.format(self.ID, model_id, self.state, split))
             eval_metrics = self.trainer.evaluate(target_data_split_name=split)
 
             for key in eval_metrics:

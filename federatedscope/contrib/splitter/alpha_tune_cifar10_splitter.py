@@ -12,8 +12,9 @@ def cifar10_label_type_based_slice(label,
                                         min_size=1,
                                         prior=None,
                                    label_class_category = {0:[0,1,8,9], 1:[2,3,4,5,6,7]}):
-    if client_num != 2:
-        raise ValueError('Only support two clients!')
+    # if client_num != 2:
+    #     raise ValueError('Only support two clients!')
+    assert client_num == len(label_class_category.keys())
 
     if len(label.shape) != 1:
         raise ValueError('Only support single-label tasks!')
@@ -43,29 +44,41 @@ def cifar10_label_type_based_slice(label,
 
             idx_k = np.where(label == k)[0]
             np.random.shuffle(idx_k)
-            if class_category == 0:
-                prop = [int(len(idx_k)*(1-alpha))]
-            else:
-                prop = [int(len(idx_k) * (alpha))]
+            prop = []
+            idx_prev = 0
+            for client_id in range(client_num):
+                if client_id == client_num-1:
+                    break
+                if client_id != class_category:
+                    # print('idx_prev: {}'.format(idx_prev))
+                    prop.append(idx_prev + int(len(idx_k)*alpha/(client_num-1)))
+                    # print('client_id: {}, len(idx_k):{}, '
+                    #       'alpha: {}, '
+                    #       'client_num: {}, '
+                    #       'int(len(idx_k)*alpha/(client_num-1)): {}'.format(client_id, len(idx_k), alpha, client_num, int(len(idx_k)*alpha/(client_num-1))))
+                    idx_prev = idx_prev + int(len(idx_k)*alpha/(client_num-1))
+                else:
+                    prop.append(idx_prev + int(len(idx_k) * (1-alpha)))
+                    idx_prev += int(len(idx_k) * (1-alpha))
 
-            # print(prop)
+            print(prop)
 
 
 
 
-            # prop = np.random.dirichlet(np.repeat(alpha, client_num))
-            # # prop = np.array([
-            # #    p * (len(idx_j) < num / client_num)
-            # #    for p, idx_j in zip(prop, idx_slice)
-            # # ])
-            # # prop = prop / sum(prop)
-            # prop = (np.cumsum(prop) * len(idx_k)).astype(int)[:-1]
+            #
+            # if class_category == 0:
+            #     prop = [int(len(idx_k)*(1-alpha))]
+            # else:
+            #     prop = [int(len(idx_k) * (alpha))]
+
             idx_slice = [
                 idx_j + idx.tolist()
                 for idx_j, idx in zip(idx_slice, np.split(idx_k, prop))
             ]
             size = min([len(idx_j) for idx_j in idx_slice])
             # print('size:{}'.format(size))
+    print(len(idx_slice))
     for i in range(client_num):
         np.random.shuffle(idx_slice[i])
     return idx_slice
@@ -82,8 +95,9 @@ class AlphaTuneCifar10Splitter(BaseSplitter):
             generates more extreme heterogeneous scenario see \
             ``np.random.dirichlet``
     """
-    def __init__(self, client_num, alpha=0.5):
+    def __init__(self, client_num, label_class_category, alpha=0.5):
         self.alpha = alpha
+        self.label_class_category = label_class_category
         super(AlphaTuneCifar10Splitter, self).__init__(client_num)
 
     def __call__(self, dataset, prior=None, **kwargs):
@@ -93,9 +107,10 @@ class AlphaTuneCifar10Splitter(BaseSplitter):
         label = np.array([y for x, y in tmp_dataset])
         # np.random.seed(seed=split_seed )
         idx_slice = cifar10_label_type_based_slice(label,
-                                                        self.client_num,
-                                                        self.alpha,
-                                                        prior=prior)
+                                                   self.client_num,
+                                                   self.alpha,
+                                                   prior=prior,
+                                                   label_class_category=self.label_class_category)
         if isinstance(dataset, Dataset):
             data_list = [Subset(dataset, idxs) for idxs in idx_slice]
         else:
