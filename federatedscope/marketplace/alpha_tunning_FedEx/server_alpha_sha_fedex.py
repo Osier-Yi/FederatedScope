@@ -899,7 +899,8 @@ class AlphaFedExShaServer(FedExServer):
 
                 act_val = [current_val[idx] for idx in activate_sha_model_list]
                 logger.info('act_val: {}'.format(act_val))
-                sort_idx = np.argsort(act_val)
+                sort_idx = np.argsort(act_val).tolist()
+
 
                 if SUPPORT_METRICS[self.aggregation_weight_sha_metric][1]:
                     logger.info('Metric: {}, the larger the better'.format(self.aggregation_weight_sha_metric))

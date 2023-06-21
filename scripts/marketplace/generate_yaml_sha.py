@@ -44,7 +44,7 @@ if __name__ == '__main__':
     aggregation_weight_sha_use = True
     aggregation_weight_sha_round = 10
     aggregation_weight_sha_metric = 'f1'
-    fedex_metric = 'avg_loss'
+    fedex_metric = 'f1'
     inf_metric = 'avg_loss'
     eval_matrics = ['acc', 'correct', 'f1', 'classification_report', 'confusion_matrix', 'avg_loss']
     tau_alpha = [1]
@@ -299,7 +299,7 @@ if __name__ == '__main__':
                 count += 1
                 if count == limit or (len(optional_run_set) == 0 and len(top_run_set) == 0):
                     bash_pth = os.path.join(sh_pth,
-                                            'run_{}.sh'.format(bashfile_id))
+                                            'run_{}.sh'.format(bashfile_id+6))
                     print('saving: {}'.format(bash_pth))
                     with open(bash_pth, 'w') as f:
                         f.write(sh_text)

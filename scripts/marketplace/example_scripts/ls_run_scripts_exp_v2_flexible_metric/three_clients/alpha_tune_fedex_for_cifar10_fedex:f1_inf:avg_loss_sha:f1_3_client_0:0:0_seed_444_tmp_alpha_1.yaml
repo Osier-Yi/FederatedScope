@@ -68,6 +68,7 @@ grad:
   grad_clip: 5.0
 hpo:
   fedex:
+    cutoff: 0.001
     diff: false
     eta0: -1.0
     gamma: 0.0
@@ -79,35 +80,62 @@ hpo:
 marketplace:
   alpha_tune:
     aggregation_weight_candidates:
+    - - 0.7
+      - 0.1
+      - 0.2
     - - 0.3
-      - 0.4
       - 0.3
+      - 0.4
+    - - 0.1
+      - 0.2
+      - 0.7
+    - - 0.1
+      - 0.7
+      - 0.2
+    - - 0.5
+      - 0.3
+      - 0.2
+    - - 0.2
+      - 0.5
+      - 0.3
+    - - 0.2
+      - 0.3
+      - 0.5
+    - - 0.8
+      - 0.1
+      - 0.1
+    - - 0.1
+      - 0.8
+      - 0.1
+    - - 0.1
+      - 0.1
+      - 0.8
     - - 0.5
       - 0.4
       - 0.1
-    aggregation_weight_sha_metric: 'avg_loss'
-    aggregation_weight_sha_round: 2
+    aggregation_weight_sha_metric: f1
+    aggregation_weight_sha_round: 10
     aggregation_weight_sha_use: true
     client_bid:
     - 0
     - 0
     - 0
     entropy_determined: false
-    info_matrix_pth: 'info_matrix/3_clients_111_inf_matrix_cat.pickle'
+    fedex_metric: f1
+    inf_matrix_metric: avg_loss
+    info_matrix_pth: info_matrix/3_clients_444_inf_matrix_cat.pickle
     is_normalize_alpha: false
     tau_alpha: 1
-    fedex_metric: 'avg_loss'
-    inf_matrix_metric: 'avg_loss'
   alpha_tune_use: true
 model:
   hidden: 512
   model_num_per_trainer: 5
   out_channels: 10
   type: convnet2
-outdir: exp_dev_test_cat_splitter/exp_ls_epoch_alpha_tune_3_client_0:0:0_seed_111_tmp_alpha_1
-seed: 111
+outdir: exp_v2_flexible_metric_fedex:f1_inf:avg_loss_sha:f1/exp_ls_epoch_alpha_tune_3_client_0:0:0_seed_444_tmp_alpha_1
+seed: 444
 train:
-  batch_or_epoch: batch
+  batch_or_epoch: epoch
   local_update_steps: 2
   optimizer:
     lr: 0.5
