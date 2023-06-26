@@ -25,7 +25,7 @@ def extend_marketplace_cfg(cfg):
     cfg.marketplace.alpha_tune.entropy_determined = False
     cfg.marketplace.alpha_tune.train_weight_control = False
     cfg.marketplace.alpha_tune.train_weight = []
-    cfg.marketplace.alpha_tune.info_matrix_pth = ''
+    cfg.marketplace.alpha_tune.val_info_pth = ''
     cfg.marketplace.alpha_tune.update_hp = True
 
     cfg.marketplace.alpha_tune.aggregation_weight_sha_use = False

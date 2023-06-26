@@ -93,13 +93,24 @@ class AlphaFedExShaServer(FedExServer):
                                                    self.aggregation_weight_sha_round ))
 
         # Load influence matrix if exist
-        if len(config.marketplace.alpha_tune.info_matrix_pth) > 0:
-            self.has_info_matrix = True
+        # if len(config.marketplace.alpha_tune.info_matrix_pth) > 0:
+        #     self.has_info_matrix = True
+        #     import pickle
+        #     f = open(config.marketplace.alpha_tune.info_matrix_pth, 'rb')
+        #     self.info_matrix_all = pickle.load(f)
+        # else:
+        #     self.has_info_matrix = False
+
+        if len(config.marketplace.alpha_tune.val_info_pth) > 0:
+            self.has_val_info= True
             import pickle
-            f = open(config.marketplace.alpha_tune.info_matrix_pth, 'rb')
-            self.info_matrix_all = pickle.load(f)
+            f = open(config.marketplace.alpha_tune.val_info_pth, 'rb')
+            self.val_info = pickle.load(f)
         else:
-            self.has_info_matrix = False
+            self.has_val_info = False
+            self.val_info = dict()
+
+
 
 
         # Initialize alpha calcualation related variables
@@ -146,7 +157,7 @@ class AlphaFedExShaServer(FedExServer):
         #     self.models = [self.models[0] for i in range(self.model_num)]
 
         self.model_training_active_status = [True for i in range(self.model_num)]
-        if self.has_info_matrix:
+        if self.has_val_info:
             for i in range(self.client_num + 1):
                 self.model_training_active_status[i] = False
         logger.info('Initialize model_training_active_status as: {}'.format(self.model_training_active_status))
@@ -180,7 +191,7 @@ class AlphaFedExShaServer(FedExServer):
         # global model with alpha tune; global model without alpha tune;
         # plus model without client i
 
-        self.val_info = dict()
+        # self.val_info = dict()
 
         self.influence_matrix_info = dict()
         self.alpha_info = dict()
@@ -264,42 +275,81 @@ class AlphaFedExShaServer(FedExServer):
 
     def update_influence_matrix(self):
 
-        if self.has_info_matrix:
-            try:
-                inf_matrix = self.info_matrix_all[self.state]
-                self.last_round_inf_matrix = inf_matrix
-            except:
-                logger.info(
-                    "existing inf matrix not has inf matrix of round: {}, replaced with last round!"
-                    .format(self.state))
-                inf_matrix = self.last_round_inf_matrix
-            logger.info(
-                "Round: {}, Model:{}, influence matrix (Exist): {}".format(
-                    self.state, self.current_model_idx, inf_matrix))
-            self.influence_matrix_info[self.state] = inf_matrix
-            return inf_matrix
+        inf_matrix = np.zeros([self.client_num, self.client_num])
+
+        # here client start from 0
+        if self.inf_matrix_metric == 'avg_loss':
+            tmp_metric = 'val_' + self.inf_matrix_metric + '_before'
         else:
-            inf_matrix = np.zeros([self.client_num, self.client_num])
+            tmp_metric = 'val_' + self.inf_matrix_metric
 
-            # here client start from 0
-            global_id = self.model_num - 2
-            for row_id in range(self.client_num):
-                for col_id in range(self.client_num):
-                    if SUPPORT_METRICS[self.inf_matrix_metric][0]:
-                        # for f1, acc the higher the better
-                        inf_matrix[row_id, col_id] = \
-                            self.val_info[self.state][global_id][col_id][self.inf_matrix_metric] - \
-                            self.val_info[self.state][row_id][col_id][self.inf_matrix_metric]
-                    else:
-                        # Original implementation for avg_loss
-                        inf_matrix[row_id, col_id] = \
-                            self.val_info[self.state][row_id][col_id][self.inf_matrix_metric] - \
-                            self.val_info[self.state][global_id][col_id][self.inf_matrix_metric]
+        # the model with all clients involved Fedavg: model ID: self.client_num
+        global_id = self.client_num
+        for row_id in range(self.client_num):
+            for col_id in range(self.client_num):
+                if SUPPORT_METRICS[self.inf_matrix_metric][0]:
+                    # for f1, acc the higher the better
+                    inf_matrix[row_id, col_id] = \
+                        self.val_info[self.state][global_id][col_id][tmp_metric] - \
+                        self.val_info[self.state][row_id][col_id][tmp_metric]
+                else:
+                    # Original implementation for avg_loss
 
-            self.influence_matrix_info[self.state] = inf_matrix
-            logger.info("Round: {}, Model:{}, influence matrix: {}".format(
-                self.state, self.current_model_idx, inf_matrix))
-            return inf_matrix
+                    tmp_metric = 'val_' + tmp_metric
+                    inf_matrix[row_id, col_id] = \
+                        self.val_info[self.state][row_id][col_id][tmp_metric] - \
+                        self.val_info[self.state][global_id][col_id][tmp_metric]
+
+        self.influence_matrix_info[self.state] = inf_matrix
+        logger.info("Round: {}, Model:{}, influence matrix: {}".format(
+            self.state, self.current_model_idx, inf_matrix))
+        return inf_matrix
+
+
+        # if self.has_info_matrix:
+        #     try:
+        #         inf_matrix = self.info_matrix_all[self.state]
+        #         self.last_round_inf_matrix = inf_matrix
+        #     except:
+        #         logger.info(
+        #             "existing inf matrix not has inf matrix of round: {}, replaced with last round!"
+        #             .format(self.state))
+        #         inf_matrix = self.last_round_inf_matrix
+        #     logger.info(
+        #         "Round: {}, Model:{}, influence matrix (Exist): {}".format(
+        #             self.state, self.current_model_idx, inf_matrix))
+        #     self.influence_matrix_info[self.state] = inf_matrix
+        #     return inf_matrix
+        # else:
+        #     inf_matrix = np.zeros([self.client_num, self.client_num])
+        #
+        #     # here client start from 0
+        #     if self.inf_matrix_metric == 'avg_loss':
+        #         tmp_metric = 'val_' + self.inf_matrix_metric + '_before'
+        #     else:
+        #         tmp_metric = 'val_' + self.inf_matrix_metric
+        #
+        #
+        #     global_id = self.model_num - 2
+        #     for row_id in range(self.client_num):
+        #         for col_id in range(self.client_num):
+        #             if SUPPORT_METRICS[self.inf_matrix_metric][0]:
+        #                 # for f1, acc the higher the better
+        #                 inf_matrix[row_id, col_id] = \
+        #                     self.val_info[self.state][global_id][col_id][tmp_metric] - \
+        #                     self.val_info[self.state][row_id][col_id][tmp_metric]
+        #             else:
+        #                 # Original implementation for avg_loss
+        #
+        #                 tmp_metric = 'val_' + tmp_metric
+        #                 inf_matrix[row_id, col_id] = \
+        #                     self.val_info[self.state][row_id][col_id][tmp_metric] - \
+        #                     self.val_info[self.state][global_id][col_id][tmp_metric]
+        #
+        #     self.influence_matrix_info[self.state] = inf_matrix
+        #     logger.info("Round: {}, Model:{}, influence matrix: {}".format(
+        #         self.state, self.current_model_idx, inf_matrix))
+        #     return inf_matrix
 
     def update_alpha(self):
         self.update_influence_matrix()
@@ -649,43 +699,68 @@ class AlphaFedExShaServer(FedExServer):
                 # in train_msg_buffer, client_id start from 1 ....
                 client_id_order = []
 
-                if self.has_info_matrix:
 
-                    for client_id in train_msg_buffer:
+                for client_id in train_msg_buffer:
+                    if self.has_val_info:
+                        pass
+                    else:
+                        self.update_val_info(train_msg_buffer[client_id][2])
+
+                    if client_id - 1 != self.current_model_idx:
                         client_id_order.append(client_id - 1)
+                        logger.info(
+                            'add client: {} update to model: {}'.format(
+                                client_id, self.current_model_idx))
+                        # model id = i means that this model
+                        # represents the model without client i+1
+                        # ** e.x.: total 3 clients, model id [0,1,2,3];
+                        # *** model_id = 0: model without client 1
                         tmp_msg_list.append(
                             tuple(train_msg_buffer[client_id][0:2]))
                         tmp_mab_feedbacks.append(
                             train_msg_buffer[client_id][2])
-                    msg_list = [None] * len(client_id_order)
-                    mab_feedbacks = [None] * len(client_id_order)
-                    for order_id in range(len(client_id_order)):
-                        msg_list[
-                            client_id_order[order_id]] = tmp_msg_list[order_id]
-                        mab_feedbacks[client_id_order[
-                            order_id]] = tmp_mab_feedbacks[order_id]
 
-                else:
-                    for client_id in train_msg_buffer:
-                        self.update_val_info(train_msg_buffer[client_id][2])
+                ind_sort = np.argsort(client_id_order)
+                msg_list = [tmp_msg_list[id_loc] for id_loc in ind_sort]
+                mab_feedbacks = [tmp_mab_feedbacks[id_loc] for id_loc in ind_sort]
 
-                        if client_id - 1 != self.current_model_idx:
-                            client_id_order.append(client_id - 1)
-                            logger.info(
-                                'add client: {} update to model: {}'.format(
-                                    client_id, self.current_model_idx))
-                            # model id = i means that this model
-                            # represents the model without client i+1
-                            # ** e.x.: total 3 clients, model id [0,1,2,3];
-                            # *** model_id = 0: model without client 1
-                            tmp_msg_list.append(
-                                tuple(train_msg_buffer[client_id][0:2]))
-                            tmp_mab_feedbacks.append(
-                                train_msg_buffer[client_id][2])
+                # if self.has_info_matrix:
+                #
+                #     for client_id in train_msg_buffer:
+                #         client_id_order.append(client_id - 1)
+                #         tmp_msg_list.append(
+                #             tuple(train_msg_buffer[client_id][0:2]))
+                #         tmp_mab_feedbacks.append(
+                #             train_msg_buffer[client_id][2])
+                #     msg_list = [None] * len(client_id_order)
+                #     mab_feedbacks = [None] * len(client_id_order)
+                #     for order_id in range(len(client_id_order)):
+                #         msg_list[
+                #             client_id_order[order_id]] = tmp_msg_list[order_id]
+                #         mab_feedbacks[client_id_order[
+                #             order_id]] = tmp_mab_feedbacks[order_id]
+                #
+                # else:
+                #     for client_id in train_msg_buffer:
+                #         self.update_val_info(train_msg_buffer[client_id][2])
+                #
+                #         if client_id - 1 != self.current_model_idx:
+                #             client_id_order.append(client_id - 1)
+                #             logger.info(
+                #                 'add client: {} update to model: {}'.format(
+                #                     client_id, self.current_model_idx))
+                #             # model id = i means that this model
+                #             # represents the model without client i+1
+                #             # ** e.x.: total 3 clients, model id [0,1,2,3];
+                #             # *** model_id = 0: model without client 1
+                #             tmp_msg_list.append(
+                #                 tuple(train_msg_buffer[client_id][0:2]))
+                #             tmp_mab_feedbacks.append(
+                #                 train_msg_buffer[client_id][2])
 
-                    ind_sort = np.argsort(client_id_order)
-                    msg_list = [tmp_msg_list[id_loc] for id_loc in ind_sort]
-                    mab_feedbacks = [tmp_mab_feedbacks[id_loc] for id_loc in ind_sort]
+                    # ind_sort = np.argsort(client_id_order)
+                    # msg_list = [tmp_msg_list[id_loc] for id_loc in ind_sort]
+                    # mab_feedbacks = [tmp_mab_feedbacks[id_loc] for id_loc in ind_sort]
 
                     # for order_id in range(len(client_id_order)):
                     #     msg_list[

@@ -16,15 +16,15 @@ if __name__ == '__main__':
     #                 [50, 20, 10], [1000, 20, 10], [100, 20, 10]]
     client_bid_2 = [[0, 0], [0,2], [2,0], [0, 5], [0, 10], [5, 0],
                     [10, 0], [100,0], [0,100]]
-    # client_bid_2 = []
+    client_bid_2 = []
     # client_bid_2 = [[0, 0]]
     # client_bid_3 = [[0, 0, 0], [10, 20, 50], [10, 20, 1000], [10, 20, 100],
     #                 [50, 20, 10], [1000, 20, 10], [100, 20, 10], [20,50,10], [20,100,10], [20,1000,10]]
 
-    client_bid_3 = [[0,0,0], [0, 0, 10], [0,0,50], [0,0,100], [0,10,0], [0, 50, 0], [0, 100, 0], [10, 0, 0], [50, 0, 0], [100, 0, 0]]
+    # client_bid_3 = [[0,0,0], [0, 0, 10], [0,0,50], [0,0,100], [0,10,0], [0, 50, 0], [0, 100, 0], [10, 0, 0], [50, 0, 0], [100, 0, 0]]
 
     # client_bid_3 = [[0,0,0]]
-    # client_bid_3 = []
+    client_bid_3 = []
     # entropy_determined = [True, False]
     entropy_determined = [False]
     # train_weight_2 = [[0.8,0.2], [0.6,0.4], [0.4, 0.6], [0.2, 0.8], [0.5,0.5]]
@@ -32,6 +32,7 @@ if __name__ == '__main__':
     # train_weight_3 = [[0.7, 0.2, 0.1], [0.2, 0.7, 0.1], [0.2,0.1,0.7], [0.33,0.33,0.34]]
     train_weight_2_candidate =[[0.9, 0.1], [0.8, 0.2], [0.3, 0.7], [0.6,0.4], [0.4, 0.6],
                       [0.5, 0.5], [0.2, 0.8], [0.7, 0.3], [0.1, 0.9], [0.0, 1.0], [1.0, 0.0]]
+    train_weight_2 = [0.5,0.5]
     # train_weight_3_candidate=[[0.7, 0.1, 0.2], [0.3,0.3,0.4], [0.1, 0.2, 0.7],
     #                           [0.1,0.7, 0.2], [0.5, 0.3, 0.2], [0.2,0.5,0.3],
     #                           [0.2, 0.3,0.5]]
@@ -39,19 +40,32 @@ if __name__ == '__main__':
                                 [0.1, 0.7, 0.2], [0.5, 0.3, 0.2], [0.2, 0.5, 0.3],
                                 [0.2, 0.3, 0.5], [0.8, 0.1,0.1], [0.1,0.8,0.1], [0.1,0.1,0.8], [0.5,0.4,0.1]]
     # train_weight_3_candidate= [[0.3,0.4,0.3]]
-    # train_weight_2_candidate = [[0.5, 0.5]]
+    train_weight_2_candidate = [[0.5, 0.5]]
 
     aggregation_weight_sha_use = True
     aggregation_weight_sha_round = 10
     aggregation_weight_sha_metric = 'f1'
     fedex_metric = 'f1'
-    inf_metric = 'avg_loss'
+    # inf_metric = 'avg_loss'
+    inf_metric = 'f1'
     eval_matrics = ['acc', 'correct', 'f1', 'classification_report', 'confusion_matrix', 'avg_loss']
     tau_alpha = [1]
-    outdir_root = 'exp_v2_flexible_metric_fedex:{}_inf:{}_sha:{}'.format(fedex_metric, inf_metric, aggregation_weight_sha_metric)
+    change_splitter = True
+    splitter_name = 'alpha_tune_cifar10_splitter'
+    splitter_args_alpha_3 = 0.05
+    splitter_args_alpha_2 = 0.01
+    # outdir_root = 'exp_v2_flexible_metric_fedex:{}_inf:{}_sha:{}'.format(fedex_metric, inf_metric, aggregation_weight_sha_metric)
+    # outdir_root = 'exp_v2_flexible_metric_fedex:{}_inf:{}_sha:{}_clients_alpha_{}'.format(fedex_metric,
+    #                                                                                           inf_metric,
+    #                                                                                           aggregation_weight_sha_metric,
+    #                                                                                           splitter_args_alpha_2)
+    outdir_root = 'exp_v2_flexible_metric_fedex:{}_inf:{}_sha:{}_v2.1'.format(fedex_metric,
+                                                                                          inf_metric,
+                                                                                          aggregation_weight_sha_metric
+                                                                                          )
     our_dir_name_prefix = 'exp_ls_epoch_alpha_tune_'
     yaml_file_name_prefix = 'alpha_tune_fedex_for_cifar10_fedex:{}_inf:{}_sha:{}_'.format(fedex_metric, inf_metric, aggregation_weight_sha_metric)
-    yaml_root_prefix = 'scripts/marketplace/example_scripts/ls_run_scripts_exp_v2_flexible_metric/'
+    yaml_root_prefix = 'scripts/marketplace/example_scripts/ls_run_scripts_exp_v2_flexible_metric_v2.1/'
     check_dir(yaml_root_prefix)
     yaml_root = os.path.join(yaml_root_prefix, 'two_clients')
     check_dir(yaml_root)
@@ -62,10 +76,8 @@ if __name__ == '__main__':
     # ss_pth = 'scripts/marketplace/example_scripts/cifar10/avg/fedex_grid_search_space_no_search.yaml'
     is_norm_alpha = False
 
-    sh_pth = 'scripts/marketplace/rep_sh_v2_flexible_metric'
-    change_splitter = True
-    splitter_name = 'alpha_tune_cifar10_splitter'
-    splitter_args_alpha = 0.05
+    sh_pth = 'scripts/marketplace/rep_sh_v2_flexible_metric_v2.1'
+
     label_class_category_3_client = {0: [0, 1, 2, 3], 1: [4, 5, 6], 2: [7, 8, 9]}
     label_class_category_2_client = {0:[0,1,8,9], 1:[2,3,4,5,6,7]}
 
@@ -73,11 +85,18 @@ if __name__ == '__main__':
 
     # inf_matrix_pth_prefix= ''
 
-    if splitter_name == 'alpha_tune_cifar10_splitter':
-        inf_matrix_pth_prefix = 'info_matrix/{}_clients_{}_inf_matrix_cat.pickle'
-    else:
-        inf_matrix_pth_prefix = 'info_matrix/{}_clients_{}_inf_matrix.pickle'
+    # val_info_pth = ''
 
+    if splitter_name == 'alpha_tune_cifar10_splitter':
+        val_info_pth = 'val_info/{}_clients_{}_val_info_cat_alpha_{}.pickle'
+    else:
+        val_info_pth =  'val_info/{}_clients_{}_val_info_lda_alpha_{}.pickle'
+
+    # if splitter_name == 'alpha_tune_cifar10_splitter':
+    #     inf_matrix_pth_prefix = 'info_matrix/{}_clients_{}_inf_matrix_cat.pickle'
+    # else:
+    #     inf_matrix_pth_prefix = 'info_matrix/{}_clients_{}_inf_matrix.pickle'
+    #
 
 
     top_run_set = []
@@ -113,7 +132,7 @@ if __name__ == '__main__':
                     original_yaml['data']['splitter'] = splitter_name
                     if splitter_name == 'alpha_tune_cifar10_splitter':
                         original_yaml['data']['splitter_args'] = [{
-                            'alpha': splitter_args_alpha, 'label_class_category': label_class_category_2_client
+                            'alpha': splitter_args_alpha_2, 'label_class_category': label_class_category_2_client
                         }]
                 if aggregation_weight_sha_use:
                     original_yaml['marketplace']['alpha_tune']['aggregation_weight_sha_use'] = aggregation_weight_sha_use
@@ -122,7 +141,7 @@ if __name__ == '__main__':
                     original_yaml['marketplace']['alpha_tune']['aggregation_weight_candidates'] = train_weight_2_candidate
 
                 original_yaml['marketplace']['alpha_tune'][
-                    'info_matrix_pth'] = inf_matrix_pth_prefix.format(2, seed_val)
+                    'val_info_pth'] = val_info_pth.format(2, seed_val, splitter_args_alpha_2)
                 original_yaml['marketplace']['alpha_tune'][
                     'client_bid'] = client_bid
                 original_yaml['seed'] = seed_val
@@ -201,7 +220,7 @@ if __name__ == '__main__':
                         original_yaml['data']['splitter'] = splitter_name
                         if splitter_name == 'alpha_tune_cifar10_splitter':
                             original_yaml['data']['splitter_args'] = [{
-                                'alpha': splitter_args_alpha, 'label_class_category': label_class_category_3_client
+                                'alpha': splitter_args_alpha_3, 'label_class_category': label_class_category_3_client
                             }]
 
 
@@ -215,7 +234,7 @@ if __name__ == '__main__':
                             original_yaml['eval']['metrics'] = dict()
                         original_yaml['eval']['metrics'] = eval_matrics
                     original_yaml['marketplace']['alpha_tune'][
-                        'info_matrix_pth'] = inf_matrix_pth_prefix.format(3, seed_val)
+                        'val_info_pth'] = val_info_pth.format(3, seed_val, splitter_args_alpha_3)
                     original_yaml['seed'] = seed_val
                     original_yaml['marketplace']['alpha_tune'][
                         'client_bid'] = client_bid
@@ -265,7 +284,7 @@ if __name__ == '__main__':
 
 
     available_gpu = [0, 1, 2, 3, 4, 5, 6, 7]
-    # available_gpu = [ 3, 4, 5, 6, 7]
+    # available_gpu = [ 0, 1, 2, 3, 4, 5, 7]
     per_gpu_running = 7
     print(len(yaml_file_pth_list_three_clients))
     print(len(yaml_file_pth_list_two_clients))
@@ -299,7 +318,7 @@ if __name__ == '__main__':
                 count += 1
                 if count == limit or (len(optional_run_set) == 0 and len(top_run_set) == 0):
                     bash_pth = os.path.join(sh_pth,
-                                            'run_{}.sh'.format(bashfile_id+6))
+                                            'run_{}.sh'.format(bashfile_id))
                     print('saving: {}'.format(bash_pth))
                     with open(bash_pth, 'w') as f:
                         f.write(sh_text)
