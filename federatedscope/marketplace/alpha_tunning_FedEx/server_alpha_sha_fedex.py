@@ -19,7 +19,7 @@ from itertools import product
 
 from scipy.stats import entropy
 
-from federatedscope.marketplace.alpha_tunning_FedEx.server import sum_normalize_func, sum_normalize_func_ep, exp_normalize_func
+from .server import (sum_normalize_func, sum_normalize_func_ep)
 
 
 def is_finish_current_state(check_model_state):
@@ -29,6 +29,7 @@ def is_finish_current_state(check_model_state):
             return all_model_finish
     else:
         return True
+
 
 def exp_alpha(vec, tau=1):
     print(vec.shape)
@@ -64,33 +65,40 @@ class AlphaFedExShaServer(FedExServer):
               self).__init__(ID, state, config, data, model, client_num,
                              total_round_num, device, strategy, **kwargs)
 
-
-        # self.sha_metric = config.marketplace.alpha_tune.aggregation_weight_sha_metric
+        # self.sha_metric =
+        # config.marketplace.alpha_tune.aggregation_weight_sha_metric
         self.fedex_metric = config.marketplace.alpha_tune.fedex_metric
 
-
         self.marketplace_client_bid = config.marketplace.alpha_tune.client_bid
-        self.aggregation_weight_candidates = config.marketplace.alpha_tune.aggregation_weight_candidates
-        self.aggregation_weight_sha_use = config.marketplace.alpha_tune.aggregation_weight_sha_use
-        self.aggregation_weight_sha_round = config.marketplace.alpha_tune.aggregation_weight_sha_round
-        self.aggregation_weight_sha_metric = config.marketplace.alpha_tune.aggregation_weight_sha_metric
-        self.inf_matrix_metric = config.marketplace.alpha_tune.inf_matrix_metric
-        logger.info('weight sha metric: {}, Fedex metric: {}, Influence metric: {}'.format(self.aggregation_weight_sha_metric,
-                                                                                           self.fedex_metric,
-                                                                                           self.inf_matrix_metric))
+        self.aggregation_weight_candidates = (
+            config.marketplace.alpha_tune.aggregation_weight_candidates)
+        self.aggregation_weight_sha_use = (
+            config.marketplace.alpha_tune.aggregation_weight_sha_use)
+        self.aggregation_weight_sha_round = (
+            config.marketplace.alpha_tune.aggregation_weight_sha_round)
+        self.aggregation_weight_sha_metric = (
+            config.marketplace.alpha_tune.aggregation_weight_sha_metric)
+        self.inf_matrix_metric = (
+            config.marketplace.alpha_tune.inf_matrix_metric)
+        logger.info(
+            'weight sha metric: {}, Fedex metric: {}, Influence metric: {}'.
+            format(self.aggregation_weight_sha_metric, self.fedex_metric,
+                   self.inf_matrix_metric))
         assert self.aggregation_weight_sha_metric in config.eval.metrics
         assert self.fedex_metric in config.eval.metrics
         assert self.inf_matrix_metric in config.eval.metrics
 
-        self.is_normalize_alpha = config.marketplace.alpha_tune.is_normalize_alpha
+        self.is_normalize_alpha = (
+            config.marketplace.alpha_tune.is_normalize_alpha)
         self.alpha_dem = None
         self.seed_id = config.seed
 
         logger.info('Whether use aggregation weight SHA: {}; '
                     'Candidate aggregation weight: {}, '
-                    'sha running round: {}'.format(self.aggregation_weight_sha_use,
-                                                   self.aggregation_weight_candidates,
-                                                   self.aggregation_weight_sha_round ))
+                    'sha running round: {}'.format(
+                        self.aggregation_weight_sha_use,
+                        self.aggregation_weight_candidates,
+                        self.aggregation_weight_sha_round))
 
         # Load influence matrix if exist
         # if len(config.marketplace.alpha_tune.info_matrix_pth) > 0:
@@ -100,18 +108,16 @@ class AlphaFedExShaServer(FedExServer):
         #     self.info_matrix_all = pickle.load(f)
         # else:
         #     self.has_info_matrix = False
+        self.last_state_with_val_info = 0
 
         if len(config.marketplace.alpha_tune.val_info_pth) > 0:
-            self.has_val_info= True
+            self.has_val_info = True
             import pickle
             f = open(config.marketplace.alpha_tune.val_info_pth, 'rb')
             self.val_info = pickle.load(f)
         else:
             self.has_val_info = False
             self.val_info = dict()
-
-
-
 
         # Initialize alpha calcualation related variables
         logger.info("client bid: {}".format(self.marketplace_client_bid))
@@ -130,22 +136,24 @@ class AlphaFedExShaServer(FedExServer):
 
         self.tau_p = config.marketplace.alpha_tune.tau_p
 
-
-
         # Total models:
         # if inf_matix not provided: N+1 models for inf_matrix calculation
         # plus len(self.aggregation_weight_candidates) models for SHA&Fedex
-        # Otherwise: len(self.aggregation_weight_candidates) models for SHA&Fedex
+        # Otherwise:
+        # len(self.aggregation_weight_candidates) models for SHA&Fedex
 
         self.model_num_sha = len(self.aggregation_weight_candidates)
         self.model_num = self.client_num + 1 + self.model_num_sha
         tmp_model = copy.deepcopy(self.models[0])
 
         self.models = [copy.deepcopy(tmp_model) for i in range(self.model_num)]
-        tmp_agg= copy.deepcopy(self.aggregators[0])
-        self.aggregators = [copy.deepcopy(tmp_agg) for i in range(self.model_num)]
+        tmp_agg = copy.deepcopy(self.aggregators[0])
+        self.aggregators = [
+            copy.deepcopy(tmp_agg) for i in range(self.model_num)
+        ]
         logger.info('self.model_num_sha: {}, '
-                    'self.model_num: {}'.format(self.model_num_sha, self.model_num))
+                    'self.model_num: {}'.format(self.model_num_sha,
+                                                self.model_num))
 
         self.val_sha = dict()
 
@@ -156,37 +164,46 @@ class AlphaFedExShaServer(FedExServer):
         #     self.model_num = self.client_num + 1 + self.model_num_sha
         #     self.models = [self.models[0] for i in range(self.model_num)]
 
-        self.model_training_active_status = [True for i in range(self.model_num)]
+        self.model_training_active_status = [
+            True for i in range(self.model_num)
+        ]
         if self.has_val_info:
             for i in range(self.client_num + 1):
                 self.model_training_active_status[i] = False
-        logger.info('Initialize model_training_active_status as: {}'.format(self.model_training_active_status))
+        logger.info('Initialize model_training_active_status as: {}'.format(
+            self.model_training_active_status))
 
         self.current_model_idx = self.find_the_first_active_model()
 
-
         if config.marketplace.alpha_tune.aggregation_weight_sha_use:
-            from federatedscope.marketplace.alpha_tunning_FedEx import AlphaTuneAggretor
+            from federatedscope.marketplace.alpha_tunning_FedEx import \
+                AlphaTuneAggretor
 
             for model_idx in range(self.client_num + 1, len(self.models)):
                 self.aggregators[model_idx] = AlphaTuneAggretor(
-                    model=model, device=device, config=config,
-                    train_weight=self.aggregation_weight_candidates[model_idx-client_num-1])
-                logger.info('Replace the aggregator of '
-                            'model: {} to AlphaTuneAggretor with weight: {}'.format(
-                    model_idx, self.aggregation_weight_candidates[model_idx-client_num-1]))
+                    model=model,
+                    device=device,
+                    config=config,
+                    train_weight=self.aggregation_weight_candidates[model_idx -
+                                                                    client_num
+                                                                    - 1])
+                logger.info(
+                    'Replace the aggregator of '
+                    'model: {} to AlphaTuneAggretor with weight: {}'.format(
+                        model_idx,
+                        self.aggregation_weight_candidates[model_idx -
+                                                           client_num - 1]))
         else:
             if config.marketplace.alpha_tune.train_weight_control:
-                from federatedscope.marketplace.alpha_tunning_FedEx import AlphaTuneAggretor
+                from federatedscope.marketplace.alpha_tunning_FedEx import \
+                    AlphaTuneAggretor
 
                 logger.info('Replace the last aggregator to AlphaTuneAggretor')
 
                 self.aggregators[self.model_num - 1] = AlphaTuneAggretor(
                     model=model, device=device, config=config)
 
-
         # self.check_model_updates = [False for i in range(client_num)]
-
 
         # global model with alpha tune; global model without alpha tune;
         # plus model without client i
@@ -283,89 +300,65 @@ class AlphaFedExShaServer(FedExServer):
         else:
             tmp_metric = 'val_' + self.inf_matrix_metric
 
+        if (self.state in self.val_info) and (len(self.val_info[self.state]) >
+                                              self.client_num):
+            self.last_state_with_val_info = self.state
+        else:
+            logger.info('Attention! State: {}, no val_info available,'
+                        ' using last round: {}'.format(
+                            self.state, self.last_state_with_val_info))
+
         # the model with all clients involved Fedavg: model ID: self.client_num
         global_id = self.client_num
         for row_id in range(self.client_num):
             for col_id in range(self.client_num):
-                if SUPPORT_METRICS[self.inf_matrix_metric][0]:
+                if SUPPORT_METRICS[self.inf_matrix_metric][1]:
                     # for f1, acc the higher the better
                     inf_matrix[row_id, col_id] = \
-                        self.val_info[self.state][global_id][col_id][tmp_metric] - \
-                        self.val_info[self.state][row_id][col_id][tmp_metric]
+                        self.val_info[self.last_state_with_val_info][
+                            global_id][col_id][tmp_metric] - \
+                        self.val_info[self.last_state_with_val_info][row_id][
+                            col_id][tmp_metric]
                 else:
                     # Original implementation for avg_loss
 
-                    tmp_metric = 'val_' + tmp_metric
+                    # tmp_metric = 'val_' + tmp_metric
                     inf_matrix[row_id, col_id] = \
-                        self.val_info[self.state][row_id][col_id][tmp_metric] - \
-                        self.val_info[self.state][global_id][col_id][tmp_metric]
+                        self.val_info[self.last_state_with_val_info][row_id][
+                            col_id][tmp_metric] - \
+                        self.val_info[self.last_state_with_val_info][
+                            global_id][col_id][tmp_metric]
 
         self.influence_matrix_info[self.state] = inf_matrix
         logger.info("Round: {}, Model:{}, influence matrix: {}".format(
             self.state, self.current_model_idx, inf_matrix))
         return inf_matrix
 
-
-        # if self.has_info_matrix:
-        #     try:
-        #         inf_matrix = self.info_matrix_all[self.state]
-        #         self.last_round_inf_matrix = inf_matrix
-        #     except:
-        #         logger.info(
-        #             "existing inf matrix not has inf matrix of round: {}, replaced with last round!"
-        #             .format(self.state))
-        #         inf_matrix = self.last_round_inf_matrix
-        #     logger.info(
-        #         "Round: {}, Model:{}, influence matrix (Exist): {}".format(
-        #             self.state, self.current_model_idx, inf_matrix))
-        #     self.influence_matrix_info[self.state] = inf_matrix
-        #     return inf_matrix
-        # else:
-        #     inf_matrix = np.zeros([self.client_num, self.client_num])
-        #
-        #     # here client start from 0
-        #     if self.inf_matrix_metric == 'avg_loss':
-        #         tmp_metric = 'val_' + self.inf_matrix_metric + '_before'
-        #     else:
-        #         tmp_metric = 'val_' + self.inf_matrix_metric
-        #
-        #
-        #     global_id = self.model_num - 2
-        #     for row_id in range(self.client_num):
-        #         for col_id in range(self.client_num):
-        #             if SUPPORT_METRICS[self.inf_matrix_metric][0]:
-        #                 # for f1, acc the higher the better
-        #                 inf_matrix[row_id, col_id] = \
-        #                     self.val_info[self.state][global_id][col_id][tmp_metric] - \
-        #                     self.val_info[self.state][row_id][col_id][tmp_metric]
-        #             else:
-        #                 # Original implementation for avg_loss
-        #
-        #                 tmp_metric = 'val_' + tmp_metric
-        #                 inf_matrix[row_id, col_id] = \
-        #                     self.val_info[self.state][row_id][col_id][tmp_metric] - \
-        #                     self.val_info[self.state][global_id][col_id][tmp_metric]
-        #
-        #     self.influence_matrix_info[self.state] = inf_matrix
-        #     logger.info("Round: {}, Model:{}, influence matrix: {}".format(
-        #         self.state, self.current_model_idx, inf_matrix))
-        #     return inf_matrix
-
     def update_alpha(self):
         self.update_influence_matrix()
         tmp_I = np.sum(self.influence_matrix_info[self.state], axis=1)
+        logger.info('tmp_I: {}'.format(tmp_I))
         if self.is_normalize_alpha:
-            alpha = exp_normalize_func(np.multiply(tmp_I, self.task_value),
-                                       tau=self.tau_alpha)
+            # alpha = exp_normalize_func(np.multiply(tmp_I, self.task_value),
+            #                            tau=self.tau_alpha)
+            alpha = sum_normalize_func(
+                np.multiply(exp_alpha(tmp_I, tau=self.tau_alpha),
+                            self.task_value))
         else:
-            alpha = exp_alpha(np.multiply(tmp_I, self.task_value),
-                              tau=self.tau_alpha)
+            # alpha = exp_alpha(np.multiply(tmp_I, self.task_value),
+            #                   tau=self.tau_alpha)
+            alpha = np.multiply(exp_alpha(tmp_I, tau=self.tau_alpha),
+                                self.task_value)
+            logger.info('exp_alpha(np.multiply(tmp_I, self.task_value),'
+                        'tau=self.tau_alpha): {}'.format(alpha))
             if self.alpha_dem is not None:
                 pass
             else:
                 self.alpha_dem = np.sum(alpha)
                 logger.info("self.alpha_dem: {}".format(self.alpha_dem))
-            alpha = alpha/self.alpha_dem
+            alpha = alpha / self.alpha_dem
+            logger.info('update alpha as :{} at round: {}'.format(
+                alpha, self.state))
 
         self.alpha_info[self.state] = alpha
 
@@ -381,9 +374,9 @@ class AlphaFedExShaServer(FedExServer):
                         outfile,
                         protocol=pickle.HIGHEST_PROTOCOL)
         with open(
-                os.path.join(self._cfg.outdir,
-                             "{}_clients_{}_inf_matrix.pickle".format(self.client_num, self.seed_id)),
-                "wb") as outfile:
+                os.path.join(
+                    self._cfg.outdir, "{}_clients_{}_inf_matrix.pickle".format(
+                        self.client_num, self.seed_id)), "wb") as outfile:
             pickle.dump(self.influence_matrix_info,
                         outfile,
                         protocol=pickle.HIGHEST_PROTOCOL)
@@ -406,7 +399,8 @@ class AlphaFedExShaServer(FedExServer):
 
         # determine index
         if self._stop_exploration[model_id]:
-            logger.info('Round: {}, model:{}, stop exploration!'.format(self.state, self.current_model_idx))
+            logger.info('Round: {}, model:{}, stop exploration!'.format(
+                self.state, self.current_model_idx))
             cfg_idx = [int(theta.argmax()) for theta in thetas]
         else:
             cfg_idx = [
@@ -451,7 +445,8 @@ class AlphaFedExShaServer(FedExServer):
         elif msg_type == 'evaluate':
             model_id_set = self._current_activate_sha_models()
         for model_id in model_id_set:
-            logger.info(" broadcast model {} for {}".format(model_id, msg_type))
+            logger.info(" broadcast model {} for {}".format(
+                model_id, msg_type))
             if filter_unseen_clients:
                 # to filter out the unseen clients when sampling
                 self.sampler.change_state(self.unseen_clients_id, 'unseen')
@@ -490,7 +485,7 @@ class AlphaFedExShaServer(FedExServer):
                         theta[model_id][rcv_idx - 1].detach().cpu().numpy()
                         for theta in self._theta[self.unseen_clients_id]
                     ],
-                        model_id=model_id)
+                                                       model_id=model_id)
                 else:
                     cfg_idx, sampled_cfg = self.sample(self._theta[model_id],
                                                        model_id=model_id)
@@ -516,8 +511,6 @@ class AlphaFedExShaServer(FedExServer):
             if filter_unseen_clients:
                 # restore the state of the unseen clients within sampler
                 self.sampler.change_state(self.unseen_clients_id, 'seen')
-
-
 
     def callback_funcs_model_para(self, message: Message):
         round, sender, content = message.state, message.sender, message.content
@@ -555,7 +548,8 @@ class AlphaFedExShaServer(FedExServer):
             [elem['val_avg_loss_before'] for elem in feedbacks])
         after = np.asarray([elem['val_avg_loss_after'] for elem in feedbacks])
 
-        if self.state != 0 and model_idx in range(self.client_num + 1, len(self.models)):
+        if self.state != 0 and model_idx in range(self.client_num + 1,
+                                                  len(self.models)):
             self.update_alpha()
             weight = self.alpha_info[self.state].flatten()
             logger.info('Round: #{}, alpha: {}'.format(self.state, weight))
@@ -618,20 +612,23 @@ class AlphaFedExShaServer(FedExServer):
                     zip(self._z[model_idx], self._theta[model_idx])):
                 grad = np.zeros(len(z))
                 if SUPPORT_METRICS[self.fedex_metric][1] == False:
-                    logger.info('self.fedex_metric: {}, is larger the better: {}'.format(self.fedex_metric, SUPPORT_METRICS[self.fedex_metric][1]))
-                    for idx, s, w in zip(index,
-                                         after - before if self._diff else after,
-                                         weight):
+                    logger.info(
+                        'self.fedex_metric: {}, is larger the better: {}'.
+                        format(self.fedex_metric,
+                               SUPPORT_METRICS[self.fedex_metric][1]))
+                    for idx, s, w in zip(
+                            index, after - before if self._diff else after,
+                            weight):
                         grad[idx[i]] += w * (s - baseline) / theta[idx[i]]
                 else:
                     if self.fedex_metric in ['acc', 'f1']:
-                        for idx, s, w in zip(index,
-                                             before - after if self._diff else 1 - after,
-                                             weight):
+                        for idx, s, w in zip(
+                                index,
+                                before - after if self._diff else 1 - after,
+                                weight):
                             grad[idx[i]] += w * (s - baseline) / theta[idx[i]]
                     else:
                         raise NotImplementedError
-
 
                 if self._sched == 'adaptive':
                     self._store[model_idx][i] += norm(grad, float('inf'))**2
@@ -699,7 +696,6 @@ class AlphaFedExShaServer(FedExServer):
                 # in train_msg_buffer, client_id start from 1 ....
                 client_id_order = []
 
-
                 for client_id in train_msg_buffer:
                     if self.has_val_info:
                         pass
@@ -722,7 +718,9 @@ class AlphaFedExShaServer(FedExServer):
 
                 ind_sort = np.argsort(client_id_order)
                 msg_list = [tmp_msg_list[id_loc] for id_loc in ind_sort]
-                mab_feedbacks = [tmp_mab_feedbacks[id_loc] for id_loc in ind_sort]
+                mab_feedbacks = [
+                    tmp_mab_feedbacks[id_loc] for id_loc in ind_sort
+                ]
 
                 # if self.has_info_matrix:
                 #
@@ -736,7 +734,8 @@ class AlphaFedExShaServer(FedExServer):
                 #     mab_feedbacks = [None] * len(client_id_order)
                 #     for order_id in range(len(client_id_order)):
                 #         msg_list[
-                #             client_id_order[order_id]] = tmp_msg_list[order_id]
+                #             client_id_order[order_id]] =
+                #             tmp_msg_list[order_id]
                 #         mab_feedbacks[client_id_order[
                 #             order_id]] = tmp_mab_feedbacks[order_id]
                 #
@@ -758,20 +757,21 @@ class AlphaFedExShaServer(FedExServer):
                 #             tmp_mab_feedbacks.append(
                 #                 train_msg_buffer[client_id][2])
 
-                    # ind_sort = np.argsort(client_id_order)
-                    # msg_list = [tmp_msg_list[id_loc] for id_loc in ind_sort]
-                    # mab_feedbacks = [tmp_mab_feedbacks[id_loc] for id_loc in ind_sort]
+                # ind_sort = np.argsort(client_id_order)
+                # msg_list = [tmp_msg_list[id_loc] for id_loc in ind_sort]
+                # mab_feedbacks =
+                # [tmp_mab_feedbacks[id_loc] for id_loc in ind_sort]
 
-                    # for order_id in range(len(client_id_order)):
-                    #     msg_list[
-                    #         client_id_order[order_id]] = tmp_msg_list[order_id]
-                    #     mab_feedbacks[client_id_order[
-                    #         order_id]] = tmp_mab_feedbacks[order_id]
+                # for order_id in range(len(client_id_order)):
+                #     msg_list[
+                #         client_id_order[order_id]] = tmp_msg_list[order_id]
+                #     mab_feedbacks[client_id_order[
+                #         order_id]] = tmp_mab_feedbacks[order_id]
 
-                # change the order of tmp_mab_feedbacks & tmp_mab_feedbacks according to client id
-                # ensure msg_list[i] and mab_feedbacks[i] is the client i+1's information
-
-
+                # change the order of tmp_mab_feedbacks & tmp_mab_feedbacks
+                # according to client id
+                # ensure msg_list[i] and mab_feedbacks[i] is the
+                # client i+1's information
 
                 # Trigger the monitor here (for training)
                 self._monitor.calc_model_metric(
@@ -781,8 +781,6 @@ class AlphaFedExShaServer(FedExServer):
                 self._monitor.calc_model_metric(self.model.state_dict(),
                                                 msg_list,
                                                 rnd=self.state)
-
-
 
                 # Aggregate
                 agg_info = {
@@ -831,17 +829,18 @@ class AlphaFedExShaServer(FedExServer):
                                    model_idx=self.current_model_idx)
                 self._update_val_sha(mab_feedbacks)
 
-                # if self.state != 0 and self.state % self.aggregation_weight_sha_round == 0:
+                # if self.state != 0 and
+                # self.state % self.aggregation_weight_sha_round == 0:
                 #     if self.has_info_matrix:
                 #         if self.count_num_active_sha_model() > 1:
                 #             logger.info("SHA evaluation: ")
                 #             self.eval()
                 #     else:
-                #         if self.count_num_active_sha_model() > 1 + self.client_num + 1:
+                #         if self.count_num_active_sha_model() > 1
+                #         + self.client_num + 1:
                 #             self.eval()
 
-
-                if self.state != 0 and self.state % self._cfg.eval.freq == 0\
+                if self.state != 0 and self.state % self._cfg.eval.freq == 0 \
                         and self.state != \
                         self.total_round_num:
                     #  Evaluate
@@ -858,9 +857,11 @@ class AlphaFedExShaServer(FedExServer):
 
                 if self.state + 1 < self.total_round_num:
                     if self.check_is_last_active_model():
-                    # if (self.current_model_idx + 1) % self.model_num == 0:
+                        # if (self.current_model_idx + 1) %
+                        # self.model_num == 0:
                         self._update_model_training_active_status()
-                        self.current_model_idx = self.find_the_first_active_model()
+                        self.current_model_idx = (
+                            self.find_the_first_active_model())
                         self.state += 1
                         logger.info(f'----------- '
                                     f'Starting a new training round (Round '
@@ -869,7 +870,8 @@ class AlphaFedExShaServer(FedExServer):
                         # Clean the msg_buffer
                         self.msg_buffer['train'][self.state - 1].clear()
                     else:
-                        self.current_model_idx = self.find_the_next_active_model()
+                        self.current_model_idx = (
+                            self.find_the_next_active_model())
                         # self.current_model_idx = (self.current_model_idx +
                         #                           1) % self.model_num
 
@@ -908,11 +910,12 @@ class AlphaFedExShaServer(FedExServer):
 
     def check_is_last_active_model(self):
         is_last_active_model = True
-        for idx in range(self.current_model_idx+1, self.model_num):
+        for idx in range(self.current_model_idx + 1, self.model_num):
             if self.model_training_active_status[idx]:
                 is_last_active_model = False
                 break
         return is_last_active_model
+
     def find_the_first_active_model(self):
         tmp_id = 0
         for idx in range(self.model_num):
@@ -920,21 +923,22 @@ class AlphaFedExShaServer(FedExServer):
                 tmp_id = idx
                 break
         return tmp_id
+
     def count_num_active_sha_model(self):
         cnt = 0
-        for idx in range(self.client_num+1, self.model_num):
+        for idx in range(self.client_num + 1, self.model_num):
             if self.model_training_active_status[idx]:
                 cnt += 1
         return cnt
-
 
     def find_the_next_active_model(self):
         tmp_id = -1
         if self.check_is_last_active_model():
             logger.info('Current model id: {} '
-                        'is the last activate model'.format(self.current_model_idx))
+                        'is the last activate model'.format(
+                            self.current_model_idx))
             return self.find_the_first_active_model()
-        for idx in range(self.current_model_idx+1, self.model_num):
+        for idx in range(self.current_model_idx + 1, self.model_num):
             if self.model_training_active_status[idx]:
                 tmp_id = idx
                 break
@@ -946,101 +950,128 @@ class AlphaFedExShaServer(FedExServer):
 
         activate_sha_model_list = []
 
-        for idx in range(self.client_num +1, self.model_num):
+        for idx in range(self.client_num + 1, self.model_num):
             if self.model_training_active_status[idx]:
                 activate_sha_model_list.append(idx)
         return activate_sha_model_list
+
     # def _get_active_sha_models(self):
     #     activate_sha_model_list = []
     #     for idx in range(len(self.model_training_active_status)):
     #         if self.model_training_active_status[idx]:
     #             activate_sha_model_list.append(idx)
 
-
     def _update_model_training_active_status(self):
         activate_sha_model_list = self._current_activate_sha_models()
-        logger.info('Round: {}, activate_sha_model_list: {}'.format(self.state, activate_sha_model_list))
-        if self.state!= 0 and self.state%self.aggregation_weight_sha_round ==0:
+        logger.info('Round: {}, activate_sha_model_list: {}'.format(
+            self.state, activate_sha_model_list))
+        if (self.state != 0
+                and self.state % self.aggregation_weight_sha_round == 0):
             if len(activate_sha_model_list) == 1:
-                logger.info('Round: {}, '
-                            'SHA alrealy finish! selected model: {}, '
-                            'aggragation weight: {}'.format(self.state,
-                                                            activate_sha_model_list[0],
-                                                            self.aggregation_weight_candidates[activate_sha_model_list[0]-self.client_num-1]))
+                logger.info(
+                    'Round: {}, '
+                    'SHA alrealy finish! selected model: {}, '
+                    'aggragation weight: {}'.format(
+                        self.state, activate_sha_model_list[0],
+                        self.aggregation_weight_candidates[
+                            activate_sha_model_list[0] - self.client_num - 1]))
             else:
-                logger.info('Round: {}, Performing SHA --------'.format(self.state))
+                logger.info('Round: {}, Performing SHA --------'.format(
+                    self.state))
                 current_val = self.val_sha[self.state]
-                select_model_num = int(len(activate_sha_model_list)/2)
+                select_model_num = int(len(activate_sha_model_list) / 2)
 
                 act_val = [current_val[idx] for idx in activate_sha_model_list]
                 logger.info('act_val: {}'.format(act_val))
                 sort_idx = np.argsort(act_val).tolist()
 
-
                 if SUPPORT_METRICS[self.aggregation_weight_sha_metric][1]:
-                    logger.info('Metric: {}, the larger the better'.format(self.aggregation_weight_sha_metric))
+                    logger.info('Metric: {}, the larger the better'.format(
+                        self.aggregation_weight_sha_metric))
                     pass
                 else:
-                    logger.info('Original sort_idx, descending order: {}'.format(sort_idx))
+                    logger.info(
+                        'Original sort_idx, descending order: {}'.format(
+                            sort_idx))
                     sort_idx.reverse()
-                    logger.info('Metric: {},the smaller the better, reverse argsort output as: {}'.format(self.aggregation_weight_sha_metric,sort_idx ))
+                    logger.info('Metric: {},the smaller the better, '
+                                'reverse argsort output as: {}'.format(
+                                    self.aggregation_weight_sha_metric,
+                                    sort_idx))
 
-                sel_model_idx = [activate_sha_model_list[sort_idx[i]] for i in range(len(activate_sha_model_list) - select_model_num, len(activate_sha_model_list))]
-                deactivate_model_idx = [activate_sha_model_list[sort_idx[i]] for i in range(len(activate_sha_model_list) - select_model_num)]
+                sel_model_idx = [
+                    activate_sha_model_list[sort_idx[i]] for i in range(
+                        len(activate_sha_model_list) -
+                        select_model_num, len(activate_sha_model_list))
+                ]
+                deactivate_model_idx = [
+                    activate_sha_model_list[sort_idx[i]] for i in range(
+                        len(activate_sha_model_list) - select_model_num)
+                ]
 
                 for model_idx in deactivate_model_idx:
                     self.model_training_active_status[model_idx] = False
 
-                logger.info('Round: {}, '
-                            'updating the model_training_active_status to: {}'.format(self.state, self.model_training_active_status))
+                logger.info(
+                    'Round: {}, '
+                    'updating the model_training_active_status to: {}'.format(
+                        self.state, self.model_training_active_status))
 
-                logger.info('Round: {}, selected models: {}, deactivate models: {}'.format(self.state, sel_model_idx, deactivate_model_idx))
-                logger.info('Round: {}, '
-                             'selected models info: '
-                             '{}'.format(self.state,
-                                         '; '.join('model_id: {}, training weight: '
-                                                   '{}'.format(model_id,
-                                                               self.aggregation_weight_candidates[model_id - self.client_num - 1]) for model_id in sel_model_idx)))
-
-
+                logger.info(
+                    'Round: {}, selected models: {}, deactivate models: {}'.
+                    format(self.state, sel_model_idx, deactivate_model_idx))
+                logger.info(
+                    'Round: {}, '
+                    'selected models info: '
+                    '{}'.format(
+                        self.state, '; '.join(
+                            'model_id: {}, training weight: '
+                            '{}'.format(
+                                model_id, self.aggregation_weight_candidates[
+                                    model_id - self.client_num - 1])
+                            for model_id in sel_model_idx)))
 
     def _update_val_sha(self, mab_feedbacks):
         if self.current_model_idx <= self.sample_client_num:
-            logger.info("current model: {}, skip sha_val update".format(self.current_model_idx))
+            logger.info("current model: {}, skip sha_val update".format(
+                self.current_model_idx))
             return None
         if self.state not in self.val_sha.keys():
-            self.val_sha[self.state] = [0]*(self.model_num)
+            self.val_sha[self.state] = [0] * (self.model_num)
 
-        cur_training_weight = self.aggregation_weight_candidates[self.current_model_idx-self.client_num-1]
+        cur_training_weight = self.aggregation_weight_candidates[
+            self.current_model_idx - self.client_num - 1]
 
-        # logger.info('current model: {},  training weight: {}'.format(cur_training_weight))
+        # logger.info('current model: {},
+        # training weight: {}'.format(cur_training_weight))
         tmp_cur_val = []
         for client_id in range(len(mab_feedbacks)):
             # assert client_id == mab_feedbacks[client_id]['client_id']
-            tmp_cur_val.append(mab_feedbacks[client_id]['val_{}'.format(self.aggregation_weight_sha_metric)])
-        logger.info('current model: {}, training weight: {}, val f1: {}'.format(self.current_model_idx,
-                                                                                cur_training_weight,
-                                                                                tmp_cur_val))
+            tmp_cur_val.append(mab_feedbacks[client_id]['val_{}'.format(
+                self.aggregation_weight_sha_metric)])
+        logger.info(
+            'current model: {}, training weight: {}, val f1: {}'.format(
+                self.current_model_idx, cur_training_weight, tmp_cur_val))
 
         tmp_f1 = 0
         # current_agg_weight = self.aggregation_weight_candidates
-        logger.info('Round: {}, current alpha_info{}'.format(self.state, self.alpha_info))
+        logger.info('Round: {}, current alpha_info{}'.format(
+            self.state, self.alpha_info))
         try:
             alpha_weight = self.alpha_info[self.state].flatten()
-            logger.info("Round: {}, alpha available! Alpha: {}".format(self.state,
-                                                              alpha_weight))
+            logger.info("Round: {}, alpha available! Alpha: {}".format(
+                self.state, alpha_weight))
         except:
-            alpha_weight = np.ones(self.client_num)* (1.0/self.client_num)
+            alpha_weight = np.ones(self.client_num) * (1.0 / self.client_num)
             logger.info('Round: {}, no alpha provided! Replace alpha as: {'
                         '}'.format(self.state, alpha_weight))
         logger.info('Round: {}, current alpha in sha_val calculation is: {'
                     '}'.format(self.state, alpha_weight))
 
-
-
         for client_id in range(len(mab_feedbacks)):
             # assert client_id == mab_feedbacks[client_id]['client_id']
-            tmp_f1 += alpha_weight[client_id] * mab_feedbacks[client_id]['val_{}'.format(self.aggregation_weight_sha_metric)]
+            tmp_f1 += alpha_weight[client_id] * mab_feedbacks[client_id][
+                'val_{}'.format(self.aggregation_weight_sha_metric)]
 
         self.val_sha[self.state][self.current_model_idx] = tmp_f1
         logger.info('Current sha_val: {}'.format(self.val_sha[self.state]))
@@ -1080,13 +1111,9 @@ class AlphaFedExShaServer(FedExServer):
                 # save the policy
                 ckpt = dict()
                 if self._cfg.hpo.fedex.psn:
-                    psn_pi_ckpt_path = self._cfg.federate.save_to[:self._cfg.
-                                                                  federate.
-                                                                  save_to.
-                                                                  rfind(
-                                                                      '.'
-                                                                  )] + \
-                                       "_pfedex.pt"
+                    psn_pi_ckpt_path = (
+                        self._cfg.federate.save_to[:self._cfg.federate.save_to.
+                                                   rfind('.')] + "_pfedex.pt")
                     torch.save(
                         {
                             'client_encodings': self._client_encodings,
