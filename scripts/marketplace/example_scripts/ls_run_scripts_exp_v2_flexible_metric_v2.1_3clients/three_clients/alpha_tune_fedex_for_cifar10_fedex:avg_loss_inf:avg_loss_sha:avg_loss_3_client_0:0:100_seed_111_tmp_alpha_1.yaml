@@ -1,0 +1,145 @@
+criterion:
+  type: CrossEntropyLoss
+data:
+  args:
+  - download: true
+  consistent_label_distribution: true
+  root: data/
+  splits:
+  - 0.8
+  - 0.2
+  - 0.2
+  splitter: alpha_tune_cifar10_splitter
+  splitter_args:
+  - alpha: 0.05
+    label_class_category:
+      0:
+      - 0
+      - 1
+      - 2
+      - 3
+      1:
+      - 4
+      - 5
+      - 6
+      2:
+      - 7
+      - 8
+      - 9
+  subsample: 0.2
+  transform:
+  - - ToTensor
+  - - Normalize
+    - mean:
+      - 0.4914
+      - 0.4822
+      - 0.4465
+      std:
+      - 0.247
+      - 0.2435
+      - 0.2616
+  type: CIFAR10@torchvision
+dataloader:
+  batch_size: 32
+device: 0
+early_stop:
+  patience: 0
+eval:
+  best_res_update_round_wise_key: test_acc
+  freq: 5
+  metrics:
+  - acc
+  - correct
+  - f1
+  - classification_report
+  - confusion_matrix
+  - avg_loss
+federate:
+  client_num: 3
+  merge_test_data: false
+  mode: standalone
+  sample_client_num: 3
+  sampler: uniform
+  save_to: Alpha_tune_ls_epoch_epoch_FedAvg_cifar10_fedex_3_clients_50_20_10_consistent_label.pth
+  share_local_model: false
+  total_round_num: 205
+  use_diff: true
+grad:
+  grad_clip: 5.0
+hpo:
+  fedex:
+    cutoff: 0.001
+    diff: false
+    eta0: -1.0
+    gamma: 0.0
+    sched: aggressive
+    ss: scripts/marketplace/example_scripts/cifar10/avg/fedex_grid_search_space_large_v1.yaml
+    use: false
+  metric: client_summarized_weighted_avg.val_avg_loss
+  working_folder: fedex_epoch_cifar10_avg_alpha_3_clients_50_20_10_consistent_label
+marketplace:
+  alpha_tune:
+    aggregation_weight_candidates:
+    - - 0.7
+      - 0.1
+      - 0.2
+    - - 0.3
+      - 0.3
+      - 0.4
+    - - 0.1
+      - 0.2
+      - 0.7
+    - - 0.1
+      - 0.7
+      - 0.2
+    - - 0.5
+      - 0.3
+      - 0.2
+    - - 0.2
+      - 0.5
+      - 0.3
+    - - 0.2
+      - 0.3
+      - 0.5
+    - - 0.8
+      - 0.1
+      - 0.1
+    - - 0.1
+      - 0.8
+      - 0.1
+    - - 0.1
+      - 0.1
+      - 0.8
+    - - 0.5
+      - 0.4
+      - 0.1
+    aggregation_weight_sha_metric: avg_loss
+    aggregation_weight_sha_round: 10
+    aggregation_weight_sha_use: true
+    client_bid:
+    - 0
+    - 0
+    - 100
+    entropy_determined: false
+    fedex_metric: avg_loss
+    inf_matrix_metric: avg_loss
+    is_normalize_alpha: false
+    tau_alpha: 1
+    val_info_pth: val_info/3_clients_111_val_info_cat_alpha_0.05.pickle
+  alpha_tune_use: true
+model:
+  hidden: 512
+  model_num_per_trainer: 5
+  out_channels: 10
+  type: convnet2
+outdir: exp_v2_flexible_metric_fedex:avg_loss_inf:avg_loss_sha:avg_loss_v2.1_3clients/exp_ls_epoch_alpha_tune_3_client_0:0:100_seed_111_tmp_alpha_1
+seed: 111
+train:
+  batch_or_epoch: epoch
+  local_update_steps: 2
+  optimizer:
+    lr: 0.5
+    weight_decay: 0.0
+trainer:
+  type: cvtrainer
+use_gpu: true
